@@ -1,6 +1,6 @@
 import { Canvas } from '@react-three/fiber';
 import { VillageScene } from './VillageScene';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 
 function VillageFallback() {
   const hour = new Date().getHours();
@@ -64,7 +64,9 @@ export default function VillageCanvas() {
         dpr={[1, 2]}
         style={{ background: '#0A0A0F' }}
       >
-        <VillageScene />
+        <Suspense fallback={null}>
+          <VillageScene />
+        </Suspense>
       </Canvas>
     </div>
   );
