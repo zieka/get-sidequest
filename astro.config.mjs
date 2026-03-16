@@ -1,6 +1,7 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import tailwind from '@astrojs/tailwind';
+import react from '@astrojs/react';
 
 export default defineConfig({
   site: 'https://zieka.github.io',
@@ -57,5 +58,6 @@ export default defineConfig({
       customCss: ['./src/styles/custom.css'],
     }),
     tailwind({ applyBaseStyles: false }),
+    react(),
   ],
 });
