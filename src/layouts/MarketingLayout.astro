@@ -1,4 +1,7 @@
 ---
+import '../styles/global.css';
+import '../styles/custom.css';
+
 interface Props {
   title: string;
   description: string;
@@ -25,8 +28,6 @@ const base = import.meta.env.BASE_URL;
 </html>
 
 <style is:global>
-  @import '../styles/custom.css';
-
   html {
     scroll-behavior: smooth;
   }
