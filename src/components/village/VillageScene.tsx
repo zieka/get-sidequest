@@ -1,4 +1,5 @@
 import { Terrain } from './Terrain';
+import { Buildings } from './Buildings';
 
 export function VillageScene() {
   return (
@@ -6,6 +7,7 @@ export function VillageScene() {
       <ambientLight intensity={0.5} />
       <directionalLight position={[5, 10, 5]} intensity={1} />
       <Terrain />
+      <Buildings />
     </>
   );
 }
