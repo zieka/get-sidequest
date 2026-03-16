@@ -1,0 +1,17 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+
+<footer class="border-t border-white/5 py-12 px-6">
+  <div class="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-6">
+    <div class="flex items-center gap-3">
+      <img src={`${base}app-icon.png`} alt="Sidequest" class="w-6 h-6 rounded-md" />
+      <span class="text-sm text-gray-400">&copy; {new Date().getFullYear()} Kyle Scully. All rights reserved.</span>
+    </div>
+    <div class="flex items-center gap-6">
+      <a href={`${base}docs/`} class="text-sm text-gray-400 hover:text-white transition-colors">Docs</a>
+      <a href="https://github.com/zieka/get-sidequest" class="text-sm text-gray-400 hover:text-white transition-colors">GitHub</a>
+      <a href="https://github.com/zieka/get-sidequest/releases/latest" class="text-sm text-gray-400 hover:text-white transition-colors">Releases</a>
+    </div>
+  </div>
+</footer>

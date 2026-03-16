@@ -4,7 +4,7 @@ import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
   site: 'https://zieka.github.io',
-  base: '/get-sidequest',
+  base: '/get-sidequest/',
   integrations: [
     starlight({
       title: 'Sidequest',
