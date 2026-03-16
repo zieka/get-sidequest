@@ -1,6 +1,8 @@
 import { Terrain } from './Terrain';
 import { Buildings } from './Buildings';
+import { Characters } from './Characters';
 import { TimeOfDayLighting } from './TimeOfDayLighting';
+import { Effects } from './Effects';
 
 export function VillageScene() {
   return (
@@ -8,6 +10,8 @@ export function VillageScene() {
       <TimeOfDayLighting />
       <Terrain />
       <Buildings />
+      <Characters />
+      <Effects />
     </>
   );
 }
