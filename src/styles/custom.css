@@ -1,1 +1,56 @@
-/* Brand overrides - populated in Task 2 */
+/* Font declarations */
+@font-face {
+  font-family: 'Alpha Lyrae';
+  src: url('/get-sidequest/fonts/AlphaLyrae-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/get-sidequest/fonts/Satoshi-Variable.woff2') format('woff2');
+  font-weight: 300 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/get-sidequest/fonts/Satoshi-VariableItalic.woff2') format('woff2');
+  font-weight: 300 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/get-sidequest/fonts/GeistMono-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+/* Starlight theme overrides */
+:root {
+  --sl-color-accent-low: #1E0A3E;
+  --sl-color-accent: #7C3AED;
+  --sl-color-accent-high: #C4B5FD;
+  --sl-color-white: #F8FAFC;
+  --sl-color-gray-1: #E2E8F0;
+  --sl-color-gray-2: #94A3B8;
+  --sl-color-gray-3: #475569;
+  --sl-color-gray-4: #1E293B;
+  --sl-color-gray-5: #14141F;
+  --sl-color-gray-6: #0F0F1A;
+  --sl-color-black: #0A0A0F;
+  --sl-font: 'Satoshi', system-ui, sans-serif;
+  --sl-font-mono: 'Geist Mono', monospace;
+}
+
+/* Heading font override for Starlight docs */
+:is(h1, h2, h3, h4, h5, h6) {
+  font-family: 'Alpha Lyrae', system-ui, sans-serif;
+}
+
+/* Force dark mode as default */
+:root {
+  color-scheme: dark;
+}
