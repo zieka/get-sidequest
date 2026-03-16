@@ -15,7 +15,6 @@
     "@astrojs/tailwind": "^6.0.2",
     "@tailwindcss/typography": "0.5",
     "astro": "^6.0.1",
-    "geist": "^1.7.0",
     "sharp": "^0.34.2",
     "tailwindcss": "3"
   }
