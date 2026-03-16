@@ -1,11 +1,11 @@
 import { Terrain } from './Terrain';
 import { Buildings } from './Buildings';
+import { TimeOfDayLighting } from './TimeOfDayLighting';
 
 export function VillageScene() {
   return (
     <>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 10, 5]} intensity={1} />
+      <TimeOfDayLighting />
       <Terrain />
       <Buildings />
     </>
