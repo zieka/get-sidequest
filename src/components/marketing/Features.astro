@@ -1,0 +1,50 @@
+---
+import FeatureCard from './FeatureCard.astro';
+---
+
+<section id="features" class="relative px-6 py-24">
+  <div class="mx-auto max-w-6xl">
+    <div class="text-center mb-8">
+      <p class="text-sm font-mono text-accent mb-4 tracking-widest uppercase">Features</p>
+    </div>
+
+    <div class="divide-y divide-white/5">
+      <FeatureCard
+        headline="Run a team of agents, not just one"
+        description="Kanban-style board to manage multiple Claude Code sessions simultaneously. Drag quests between backlog and active. Each quest runs in its own isolated git worktree — no merge conflicts, no stepping on toes."
+        screenshotLabel="Quest Board"
+        screenshotDescription="Quest board showing Backlog and Active columns, 3-4 quest cards with status indicators, one mid-drag"
+      />
+
+      <FeatureCard
+        headline="Supervision on autopilot"
+        description="A dedicated agent monitors your active quests, auto-answers routine prompts, activates backlog items when slots open, and escalates only what needs your attention."
+        screenshotLabel="Supervisor"
+        screenshotDescription="Supervisor panel showing auto-approved actions and an escalation notification"
+        reverse
+      />
+
+      <FeatureCard
+        headline="Every discovery, documented"
+        description="Automatic markdown summaries of every quest conversation. Decisions, findings, and learnings captured without lifting a finger."
+        screenshotLabel="Journals"
+        screenshotDescription="Journal view showing a markdown document with quest summary, key decisions section"
+      />
+
+      <FeatureCard
+        headline="Full Claude Code, zero context switching"
+        description="Embedded terminal with the complete Claude Code experience. Switch between active quests instantly. Everything in one window."
+        screenshotLabel="Terminal"
+        screenshotDescription="Terminal panel with active Claude Code session, quest tabs visible above"
+        reverse
+      />
+
+      <FeatureCard
+        headline="Know what you're spending"
+        description="Token usage tracking, cost estimates, and performance metrics across all your projects and quests."
+        screenshotLabel="Usage Dashboard"
+        screenshotDescription="Usage dashboard showing token charts, cost breakdown, project leaderboard"
+      />
+    </div>
+  </div>
+</section>
