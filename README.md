@@ -2,9 +2,21 @@
   <img src="app-icon.png" alt="Sidequest" width="128" />
 </p>
 
-<h1 align="center">Welcome to Sidequest</h1>
+<h1 align="center">Sidequest</h1>
 
-Your **main quest** is always running. But every great adventure needs sidequests — parallel agent sessions that **tackle bugs, ship features, prototype ideas, and research solutions** to keep your story moving forward.
+<p align="center">
+  Your AI development team, orchestrated.
+</p>
+
+<p align="center">
+  <a href="https://zieka.github.io/get-sidequest/">Website</a> &bull;
+  <a href="https://zieka.github.io/get-sidequest/docs/">Documentation</a> &bull;
+  <a href="https://github.com/zieka/get-sidequest/releases/latest">Download</a>
+</p>
+
+---
+
+Run parallel Claude Code agents, supervise them automatically, and ship faster than ever.
 
 ## Install on macOS
 
