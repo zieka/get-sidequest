@@ -6,9 +6,10 @@ interface Props {
   screenshotDescription: string;
   reverse?: boolean;
   icon?: string;
+  screenshotImage?: string;
 }
 
-const { headline, description, screenshotLabel, screenshotDescription, reverse = false, icon } = Astro.props;
+const { headline, description, screenshotLabel, screenshotDescription, reverse = false, icon, screenshotImage } = Astro.props;
 const base = import.meta.env.BASE_URL;
 
 // Text rotates inward toward the screenshot, screenshot rotates inward toward text
@@ -36,12 +37,16 @@ const screenshotRotate = reverse ? 'rotateY(6deg)' : 'rotateY(-6deg)';
           <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
           <div class="w-2.5 h-2.5 rounded-full bg-green-500/50" />
         </div>
-        <div class="aspect-[16/10] flex items-center justify-center p-6 text-gray-500 border-2 border-dashed border-white/5 m-3 rounded-lg">
-          <div class="text-center">
-            <p class="text-sm font-mono mb-2">[SCREENSHOT: {screenshotLabel}]</p>
-            <p class="text-xs max-w-sm">{screenshotDescription}</p>
+        {screenshotImage ? (
+          <img src={`${base}${screenshotImage}`} alt={screenshotLabel} class="w-full" />
+        ) : (
+          <div class="aspect-[16/10] flex items-center justify-center p-6 text-gray-500 border-2 border-dashed border-white/5 m-3 rounded-lg">
+            <div class="text-center">
+              <p class="text-sm font-mono mb-2">[SCREENSHOT: {screenshotLabel}]</p>
+              <p class="text-xs max-w-sm">{screenshotDescription}</p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   </div>
