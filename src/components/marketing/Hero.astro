@@ -17,7 +17,7 @@ const docsUrl = `${base}docs/`;
     <h1 class="font-heading text-4xl md:text-6xl tracking-tight leading-[1.15] mb-6 hero-text">
       Your main quest is always running.<br />
       But every great adventure needs
-      <span class="bg-gradient-to-r from-violet-300 via-purple-300 to-cyan-300 bg-clip-text text-transparent hero-gradient-text">sidequests.</span>
+      <span class="hero-stroke-text">sidequests.</span>
     </h1>
 
     <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto mb-10 leading-relaxed hero-text">
@@ -39,7 +39,33 @@ const docsUrl = `${base}docs/`;
   .hero-text {
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 4px 24px rgba(0, 0, 0, 0.6);
   }
-  .hero-gradient-text {
-    filter: drop-shadow(0 2px 8px rgba(124, 58, 237, 0.4));
+  .hero-stroke-text {
+    color: white;
+    position: relative;
+    -webkit-text-stroke: 1.5px transparent;
+    background: linear-gradient(90deg, #a78bfa, #7c3aed, #38bdf8, #a78bfa);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-shift 4s linear infinite;
+    paint-order: stroke fill;
+    -webkit-text-stroke: 2px;
+    -webkit-text-stroke-color: transparent;
+    text-shadow: none;
+  }
+  .hero-stroke-text::before {
+    content: 'sidequests.';
+    position: absolute;
+    left: 0;
+    top: 0;
+    -webkit-text-fill-color: white;
+    -webkit-text-stroke: 0;
+    z-index: -1;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 4px 24px rgba(0, 0, 0, 0.6);
+  }
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
   }
 </style>
