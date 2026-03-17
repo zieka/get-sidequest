@@ -1,8 +1,8 @@
 /* Font declarations */
 @font-face {
-  font-family: 'Ballet';
-  src: url('/get-sidequest/fonts/Ballet-Latin.woff2') format('woff2');
-  font-weight: 400;
+  font-family: 'Pentiment Printed';
+  src: url('/get-sidequest/fonts/PentimentPrinted.otf') format('opentype');
+  font-weight: 100 900;
   font-display: swap;
 }
 
