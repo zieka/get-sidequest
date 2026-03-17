@@ -60,20 +60,19 @@ function Bush({ position, scale = 1 }: { position: [number, number, number]; sca
 export function ForegroundElements() {
   return (
     <group>
-      {/* Near-camera foreground — these will be blurred by DoF */}
-      <Rock position={[-8, 0.4, 10]} scale={0.8} />
-      <Rock position={[9, 0.3, 11]} scale={0.6} />
-      <Rock position={[-6, 0.5, 12]} scale={1.0} />
-      <Bush position={[-9, 0.5, 9]} scale={0.7} />
-      <Bush position={[8, 0.4, 10]} scale={0.5} />
-      <Bush position={[-7, 0.6, 11]} scale={0.8} />
-      <Bush position={[10, 0.5, 9]} scale={0.6} />
+      {/* Near-camera foreground — will be blurred by DoF, framing the scene */}
+      <Rock position={[-6, 0.4, 6]} scale={0.8} />
+      <Rock position={[7, 0.3, 6.5]} scale={0.6} />
+      <Bush position={[-7, 0.5, 5.5]} scale={0.7} />
+      <Bush position={[6, 0.4, 6]} scale={0.5} />
+      <Bush position={[-5, 0.6, 7]} scale={0.8} />
+      <Bush position={[8, 0.5, 5.5]} scale={0.6} />
 
-      {/* Also some behind the buildings for background blur */}
-      <Rock position={[-8, 0.3, -8]} scale={0.7} />
-      <Rock position={[9, 0.4, -9]} scale={0.5} />
-      <Bush position={[-7, 0.5, -7]} scale={0.6} />
-      <Bush position={[8, 0.4, -8]} scale={0.8} />
+      {/* Behind buildings — background blur layer */}
+      <Rock position={[-6, 0.3, -4]} scale={0.7} />
+      <Rock position={[7, 0.4, -5]} scale={0.5} />
+      <Bush position={[-5, 0.5, -3.5]} scale={0.6} />
+      <Bush position={[6, 0.4, -4]} scale={0.8} />
     </group>
   );
 }

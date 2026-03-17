@@ -64,21 +64,21 @@ export function Terrain() {
 
   return (
     <group>
-      {/* Main grass ground */}
+      {/* Main grass ground — tighter, more rectangular */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-        <planeGeometry args={[30, 30]} />
+        <planeGeometry args={[30, 14]} />
         <meshStandardMaterial map={grassTexture} />
       </mesh>
 
-      {/* Dirt path through village */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]} receiveShadow>
-        <planeGeometry args={[3, 20]} />
+      {/* Dirt path through village — horizontal, connecting buildings */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 1]} receiveShadow>
+        <planeGeometry args={[20, 2]} />
         <meshStandardMaterial map={pathTexture} />
       </mesh>
 
       {/* Small pond/stream area */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[6, 0.02, -4]} receiveShadow>
-        <circleGeometry args={[2, 16]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[7, 0.02, -1]} receiveShadow>
+        <circleGeometry args={[1.5, 16]} />
         <meshStandardMaterial color="#1a3a5a" transparent opacity={0.8} />
       </mesh>
     </group>

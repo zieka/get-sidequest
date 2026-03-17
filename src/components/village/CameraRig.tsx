@@ -6,24 +6,22 @@ export function CameraRig() {
   const { camera } = useThree();
   const timeRef = useRef(0);
 
-  // Fixed look direction — set once on mount
   const lookTarget = useRef(new THREE.Vector3(0, 1.5, 0));
   const initialized = useRef(false);
 
   useFrame((_, delta) => {
-    // Set fixed camera orientation on first frame
     if (!initialized.current) {
-      camera.position.set(0, 8, 14);
+      // Lower angle — camera closer to ground, looking slightly up at the scene
+      camera.position.set(0, 5, 10);
       camera.lookAt(lookTarget.current);
-      // Store the rotation so we never change it
       initialized.current = true;
     }
 
-    // Slow horizontal truck: ~60 second full cycle, gentle side-to-side
-    timeRef.current += delta / 60;
-    const truckX = Math.sin(timeRef.current * Math.PI * 2) * 5;
+    // Very slow truck: ~120 second full cycle, subtle side-to-side
+    // "Living picture" — barely perceptible movement
+    timeRef.current += delta / 120;
+    const truckX = Math.sin(timeRef.current * Math.PI * 2) * 3;
 
-    // Only move X position — no rotation, no Y/Z change
     camera.position.x = truckX;
   });
 

@@ -61,12 +61,13 @@ function PixelTree({ position, height = 3 }: { position: [number, number, number
 export function Trees() {
   return (
     <group>
-      <PixelTree position={[-7, 1.5, -5]} height={3.5} />
-      <PixelTree position={[8, 1.5, -4]} height={3} />
-      <PixelTree position={[-6, 1.5, 5]} height={2.8} />
-      <PixelTree position={[7, 1.5, 5]} height={3.2} />
-      <PixelTree position={[-2, 1.5, -6]} height={2.5} />
-      <PixelTree position={[3, 1.5, 6]} height={3} />
+      {/* Between and around buildings */}
+      <PixelTree position={[-5, 1.5, -2]} height={3.5} />
+      <PixelTree position={[7, 1.5, -2]} height={3} />
+      <PixelTree position={[-9, 1.5, 2]} height={2.8} />
+      <PixelTree position={[10, 1.5, 1]} height={3.2} />
+      <PixelTree position={[1, 1.5, -3]} height={2.5} />
+      <PixelTree position={[-3, 1.5, 3]} height={3} />
     </group>
   );
 }

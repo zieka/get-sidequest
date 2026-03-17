@@ -83,7 +83,7 @@ export function Backdrop() {
   }, []);
 
   return (
-    <mesh position={[0, 8, -20]} scale={[60, 30, 1]}>
+    <mesh position={[0, 6, -8]} scale={[40, 20, 1]}>
       <planeGeometry args={[1, 1]} />
       <meshBasicMaterial map={texture} fog={false} />
     </mesh>
