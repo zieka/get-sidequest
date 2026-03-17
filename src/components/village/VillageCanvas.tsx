@@ -62,7 +62,7 @@ export default function VillageCanvas() {
         shadows
         gl={{ antialias: true, alpha: false }}
         dpr={[1, 2]}
-        camera={{ fov: 50, position: [0, 0, 10] }}
+        camera={{ fov: 65, position: [0, 0, 10] }}
         style={{ background: '#0A0A0F' }}
       >
         <Suspense fallback={null}>
