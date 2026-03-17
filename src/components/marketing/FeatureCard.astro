@@ -38,7 +38,7 @@ const screenshotRotate = reverse ? 'rotateY(6deg)' : 'rotateY(-6deg)';
           <div class="w-2.5 h-2.5 rounded-full bg-green-500/50" />
         </div>
         {screenshotImage ? (
-          <img src={`${base}${screenshotImage}`} alt={screenshotLabel} class="w-full" />
+          <img src={`${base}${screenshotImage}`} alt={screenshotLabel} class="max-h-[400px] w-auto mx-auto object-contain" />
         ) : (
           <div class="aspect-[16/10] flex items-center justify-center p-6 text-gray-500 border-2 border-dashed border-white/5 m-3 rounded-lg">
             <div class="text-center">
