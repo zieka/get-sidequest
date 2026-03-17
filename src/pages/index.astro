@@ -16,6 +16,14 @@ import Footer from '../components/marketing/Footer.astro';
   <main class="pt-16">
     <Hero />
     <Problem />
+    <section class="relative px-6 py-16">
+      <div class="mx-auto max-w-5xl">
+        <div class="relative">
+          <div class="absolute -inset-4 bg-gradient-to-r from-accent/20 to-cyan-400/20 rounded-2xl blur-2xl" />
+          <img src={`${import.meta.env.BASE_URL}screenshots/sidequest.png`} alt="Sidequest" class="relative rounded-xl border border-white/10 shadow-2xl w-full" />
+        </div>
+      </div>
+    </section>
     <Features />
     <DownloadCTA />
   </main>
