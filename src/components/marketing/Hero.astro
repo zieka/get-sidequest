@@ -14,13 +14,13 @@ const docsUrl = `${base}docs/`;
 
   <!-- Text overlay -->
   <div class="relative z-10 flex flex-col items-center justify-center h-full px-6 text-center">
-    <h1 class="font-heading text-4xl md:text-6xl tracking-tight leading-[1.15] mb-6">
+    <h1 class="font-heading text-4xl md:text-6xl tracking-tight leading-[1.15] mb-6 hero-text">
       Your main quest is always running.<br />
       But every great adventure needs
-      <span class="bg-gradient-to-r from-accent to-cyan-400 bg-clip-text text-transparent">sidequests.</span>
+      <span class="bg-gradient-to-r from-violet-400 via-accent to-cyan-400 bg-clip-text text-transparent hero-gradient-text">sidequests.</span>
     </h1>
 
-    <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto mb-10 leading-relaxed">
+    <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto mb-10 leading-relaxed hero-text">
       Orchestrate multiple parallel agents to tackle bugs, ship features, and research solutions, because sometimes it takes a village.
     </p>
 
@@ -34,3 +34,12 @@ const docsUrl = `${base}docs/`;
     </div>
   </div>
 </section>
+
+<style>
+  .hero-text {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 4px 24px rgba(0, 0, 0, 0.6);
+  }
+  .hero-gradient-text {
+    filter: drop-shadow(0 2px 8px rgba(124, 58, 237, 0.4));
+  }
+</style>
