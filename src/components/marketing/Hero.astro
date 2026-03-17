@@ -17,7 +17,7 @@ const docsUrl = `${base}docs/`;
     <h1 class="font-heading text-4xl md:text-6xl tracking-tight leading-[1.15] mb-6 hero-text">
       Your main quest is always running.<br />
       But every great adventure needs
-      <span class="hero-stroke-text">sidequests.</span>
+      <span class="font-body italic">sidequests.</span>
     </h1>
 
     <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto mb-10 leading-relaxed hero-text">
@@ -38,29 +38,5 @@ const docsUrl = `${base}docs/`;
 <style>
   .hero-text {
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 4px 24px rgba(0, 0, 0, 0.6);
-  }
-  .hero-stroke-text {
-    color: white;
-    position: relative;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 4px 24px rgba(0, 0, 0, 0.6);
-  }
-  .hero-stroke-text::after {
-    content: 'sidequests.';
-    position: absolute;
-    left: 0;
-    top: 0;
-    background: linear-gradient(90deg, #a78bfa, #7c3aed, #38bdf8, #a78bfa);
-    background-size: 200% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    -webkit-text-stroke: 3px transparent;
-    z-index: -1;
-    animation: gradient-shift 4s linear infinite;
-    filter: blur(4px);
-  }
-  @keyframes gradient-shift {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 200% 50%; }
   }
 </style>
