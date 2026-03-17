@@ -1,19 +1,15 @@
-import { EffectComposer, DepthOfField, Bloom, Vignette } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 
 export function Effects() {
   return (
     <EffectComposer>
-      <DepthOfField
-        focusDistance={0.01}
-        focalLength={0.03}
-        bokehScale={6}
-      />
       <Bloom
-        intensity={0.5}
-        luminanceThreshold={0.7}
+        intensity={0.8}
+        luminanceThreshold={0.5}
         luminanceSmoothing={0.9}
+        mipmapBlur
       />
-      <Vignette eskil={false} offset={0.1} darkness={0.5} />
+      <Vignette eskil={false} offset={0.15} darkness={0.4} />
     </EffectComposer>
   );
 }
