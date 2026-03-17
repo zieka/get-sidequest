@@ -4,13 +4,13 @@ export function Effects() {
   return (
     <EffectComposer>
       <DepthOfField
-        focusDistance={0.02}
-        focalLength={0.05}
-        bokehScale={4}
+        focusDistance={0.01}
+        focalLength={0.03}
+        bokehScale={6}
       />
       <Bloom
-        intensity={0.3}
-        luminanceThreshold={0.8}
+        intensity={0.5}
+        luminanceThreshold={0.7}
         luminanceSmoothing={0.9}
       />
       <Vignette eskil={false} offset={0.1} darkness={0.5} />

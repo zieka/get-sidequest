@@ -44,6 +44,11 @@ export function CharacterSprite({
           />
         </mesh>
       </Billboard>
+      {/* Drop shadow on ground */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02 - position[1], 0]}>
+        <circleGeometry args={[scale * 0.35, 16]} />
+        <meshBasicMaterial color="#000000" transparent opacity={0.3} depthWrite={false} />
+      </mesh>
     </group>
   );
 }
