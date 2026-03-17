@@ -5,7 +5,7 @@
 <h1 align="center">Sidequest</h1>
 
 <p align="center">
-  Your AI development team, orchestrated.
+  Your main quest is always running. But every great adventure needs sidequests.
 </p>
 
 <p align="center">
