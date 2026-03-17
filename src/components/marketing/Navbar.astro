@@ -1,0 +1,23 @@
+---
+const base = import.meta.env.BASE_URL;
+---
+
+<nav class="fixed top-0 left-0 right-0 z-50 border-b border-white/5 backdrop-blur-xl bg-background/70">
+  <div class="mx-auto max-w-7xl px-6 flex items-center justify-between h-16">
+    <a href={base} class="flex items-center gap-3">
+      <img src={`${base}app-icon.png`} alt="Sidequest" class="w-8 h-8 rounded-lg" />
+      <span class="font-heading text-lg text-white">Sidequest</span>
+    </a>
+    <div class="hidden md:flex items-center gap-8">
+      <a href="#features" class="text-sm text-gray-400 hover:text-white transition-colors">Features</a>
+      <a href={`${base}docs/`} class="text-sm text-gray-400 hover:text-white transition-colors">Docs</a>
+      <a href="https://github.com/zieka/get-sidequest" class="text-sm text-gray-400 hover:text-white transition-colors">GitHub</a>
+      <a
+        href="https://github.com/zieka/get-sidequest/releases/latest"
+        class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-accent to-cyan-400 hover:opacity-90 transition-opacity"
+      >
+        Download for macOS
+      </a>
+    </div>
+  </div>
+</nav>

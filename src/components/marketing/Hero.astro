@@ -1,0 +1,42 @@
+---
+import VillageCanvas from '../village/VillageCanvas';
+const base = import.meta.env.BASE_URL;
+const downloadUrl = "https://github.com/zieka/get-sidequest/releases/latest";
+const docsUrl = `${base}docs/`;
+---
+
+<section class="relative overflow-hidden h-screen min-h-[600px] max-h-[900px]">
+  <!-- Three.js Canvas -->
+  <VillageCanvas client:only="react" />
+
+  <!-- Dark gradient overlay for text readability -->
+  <div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent pointer-events-none"></div>
+
+  <!-- Text overlay -->
+  <div class="relative z-10 flex flex-col items-center justify-center h-full px-6 text-center">
+    <h1 class="text-4xl md:text-6xl tracking-tight leading-[1.3] mb-6 hero-text" style="font-family: 'Pentiment Printed', serif;">
+      Your main quest is always running.<br />
+      But every great adventure needs
+      <span class="font-heading">sidequests.</span>
+    </h1>
+
+    <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto mb-10 leading-relaxed hero-text">
+      Orchestrate multiple parallel agents to tackle bugs, ship features, and research solutions, because sometimes it takes a village.
+    </p>
+
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a href={downloadUrl} class="inline-flex items-center px-6 py-3 rounded-xl text-base font-medium text-white bg-gradient-to-r from-accent to-cyan-400 hover:opacity-90 transition-opacity shadow-lg shadow-accent/25">
+        Download for macOS
+      </a>
+      <a href={docsUrl} class="inline-flex items-center px-6 py-3 rounded-xl text-base font-medium text-gray-300 border border-white/10 hover:border-white/20 hover:text-white transition-all">
+        Read the docs
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero-text {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 4px 24px rgba(0, 0, 0, 0.6);
+  }
+</style>

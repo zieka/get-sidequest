@@ -1,0 +1,78 @@
+<section class="relative px-6 py-32 overflow-hidden">
+  <!-- Background glow -->
+  <div class="absolute inset-0 flex items-center justify-center">
+    <div class="w-[600px] h-[400px] bg-accent/10 rounded-full blur-[100px]" />
+  </div>
+
+  <!-- Floating pixel art items -->
+  <div class="absolute inset-0 pointer-events-none overflow-hidden">
+    <div class="absolute top-[15%] left-[10%] w-8 h-8 opacity-20 animate-float-1">
+      <svg viewBox="0 0 16 16" class="w-full h-full" style="image-rendering: pixelated;">
+        <rect x="7" y="1" width="2" height="12" fill="#c0c0c0"/>
+        <rect x="5" y="13" width="6" height="2" fill="#daa520"/>
+        <rect x="6" y="12" width="4" height="1" fill="#b8860b"/>
+      </svg>
+    </div>
+    <div class="absolute top-[25%] right-[15%] w-8 h-8 opacity-15 animate-float-2">
+      <svg viewBox="0 0 16 16" class="w-full h-full" style="image-rendering: pixelated;">
+        <rect x="4" y="3" width="8" height="10" fill="#f5e6c8"/>
+        <rect x="3" y="2" width="2" height="12" fill="#8B6914"/>
+        <rect x="11" y="2" width="2" height="12" fill="#8B6914"/>
+      </svg>
+    </div>
+    <div class="absolute bottom-[20%] left-[20%] w-6 h-6 opacity-15 animate-float-3">
+      <svg viewBox="0 0 16 16" class="w-full h-full" style="image-rendering: pixelated;">
+        <rect x="6" y="2" width="4" height="8" fill="#4a90d9"/>
+        <rect x="5" y="10" width="6" height="2" fill="#4a90d9"/>
+        <rect x="7" y="0" width="2" height="2" fill="#c0c0c0"/>
+      </svg>
+    </div>
+    <div class="absolute bottom-[30%] right-[12%] w-7 h-7 opacity-20 animate-float-4">
+      <svg viewBox="0 0 16 16" class="w-full h-full" style="image-rendering: pixelated;">
+        <rect x="3" y="5" width="10" height="8" fill="#8B6914"/>
+        <rect x="4" y="6" width="8" height="6" fill="#654321"/>
+        <rect x="6" y="3" width="4" height="2" fill="#daa520"/>
+        <rect x="7" y="8" width="2" height="2" fill="#daa520"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="relative mx-auto max-w-3xl text-center">
+    <h2 class="font-heading text-4xl md:text-5xl tracking-tight mb-6">
+      Ready to run your
+      <span class="bg-gradient-to-r from-accent to-cyan-400 bg-clip-text text-transparent">sidequest?</span>
+    </h2>
+    <p class="text-lg text-gray-400 mb-10">
+      Download Sidequest for macOS and start orchestrating your AI development team.
+    </p>
+    <a
+      href="https://github.com/zieka/get-sidequest/releases/latest"
+      class="inline-flex items-center px-8 py-4 rounded-xl text-lg font-medium text-white bg-gradient-to-r from-accent to-cyan-400 hover:opacity-90 transition-opacity shadow-lg shadow-accent/25"
+    >
+      Download for macOS
+    </a>
+  </div>
+</section>
+
+<style>
+  @keyframes float-1 {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-12px) rotate(3deg); }
+  }
+  @keyframes float-2 {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-8px) rotate(-2deg); }
+  }
+  @keyframes float-3 {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(2deg); }
+  }
+  @keyframes float-4 {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-6px) rotate(-3deg); }
+  }
+  .animate-float-1 { animation: float-1 4s ease-in-out infinite; }
+  .animate-float-2 { animation: float-2 5s ease-in-out infinite 0.5s; }
+  .animate-float-3 { animation: float-3 4.5s ease-in-out infinite 1s; }
+  .animate-float-4 { animation: float-4 5.5s ease-in-out infinite 1.5s; }
+</style>
