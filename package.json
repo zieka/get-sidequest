@@ -14,6 +14,7 @@
     "@astrojs/starlight": "^0.38.1",
     "@astrojs/starlight-tailwind": "3",
     "@astrojs/tailwind": "^6.0.2",
+    "@fontsource/ballet": "^5.2.8",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@react-three/postprocessing": "^3.0.4",
