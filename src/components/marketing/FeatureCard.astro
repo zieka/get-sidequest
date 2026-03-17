@@ -27,27 +27,22 @@ const screenshotRotate = reverse ? 'rotateY(6deg)' : 'rotateY(-6deg)';
     <p class="text-lg text-gray-400 leading-relaxed">{description}</p>
   </div>
 
-  <!-- Screenshot placeholder -->
+  <!-- Screenshot -->
   <div class="flex-1 w-full" style={`transform: ${screenshotRotate}; transform-style: preserve-3d;`}>
     <div class="relative">
       <div class="absolute -inset-2 bg-gradient-to-r from-accent/10 to-cyan-400/10 rounded-xl blur-xl" />
-      <div class="relative rounded-xl border border-white/10 bg-surface overflow-hidden">
-        <div class="flex items-center gap-2 px-4 py-3 border-b border-white/5">
-          <div class="w-2.5 h-2.5 rounded-full bg-red-500/50" />
-          <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
-          <div class="w-2.5 h-2.5 rounded-full bg-green-500/50" />
-        </div>
-        {screenshotImage ? (
-          <img src={`${base}${screenshotImage}`} alt={screenshotLabel} class="max-h-[400px] w-auto mx-auto object-contain" />
-        ) : (
+      {screenshotImage ? (
+        <img src={`${base}${screenshotImage}`} alt={screenshotLabel} class="relative rounded-xl border border-white/10 shadow-2xl max-h-[400px] w-auto mx-auto object-contain" />
+      ) : (
+        <div class="relative rounded-xl border border-white/10 bg-surface overflow-hidden">
           <div class="aspect-[16/10] flex items-center justify-center p-6 text-gray-500 border-2 border-dashed border-white/5 m-3 rounded-lg">
             <div class="text-center">
               <p class="text-sm font-mono mb-2">[SCREENSHOT: {screenshotLabel}]</p>
               <p class="text-xs max-w-sm">{screenshotDescription}</p>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   </div>
 </div>
