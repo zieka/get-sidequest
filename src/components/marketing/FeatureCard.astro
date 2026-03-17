@@ -19,8 +19,8 @@ const screenshotRotate = reverse ? 'rotateY(6deg)' : 'rotateY(-6deg)';
 
 <div class={`flex flex-col ${reverse ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-12 py-16`} style="perspective: 1200px;">
   <!-- Text -->
-  <div class={`flex-1 text-center ${reverse ? 'md:text-right' : 'md:text-left'}`} style={`transform: ${textRotate}; transform-style: preserve-3d;`}>
-    <div class={`flex items-center gap-3 justify-center ${reverse ? 'md:justify-end' : 'md:justify-start'} mb-4`}>
+  <div class="flex-1 text-center md:text-left" style={`transform: ${textRotate}; transform-style: preserve-3d;`}>
+    <div class="flex items-center gap-3 justify-center md:justify-start mb-4">
       {icon && !reverse && <img src={`${base}${icon}`} alt="" class="w-10 h-10" style="image-rendering: pixelated;" />}
       <h3 class="font-heading text-2xl md:text-3xl tracking-tight">{headline}</h3>
       {icon && reverse && <img src={`${base}${icon}`} alt="" class="w-10 h-10" style="image-rendering: pixelated; transform: scaleX(-1);" />}
