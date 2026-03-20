@@ -3,4 +3,172 @@ title: Settings
 description: Configure Sidequest preferences, appearance, and behavior.
 ---
 
-> This page is under construction.
+Open settings with **Cmd+,** or from the **Sidequest** menu bar > **Settings...**. You can also click the gear icon in the bottom toolbar.
+
+Settings are organized into seven categories via the sidebar navigation.
+
+## General
+
+### Language
+
+Set the display language for the application. Supported languages:
+
+| Value | Language |
+|-------|----------|
+| English | English (default) |
+| Francais | French |
+| Espanol | Spanish |
+| Zhongwen | Chinese |
+
+### Preferred Editor
+
+The editor used when you click "Open in Editor" from the diff viewer, quest context menu, or command palette.
+
+| Editor | Value |
+|--------|-------|
+| Visual Studio Code | `vscode` (default) |
+| IntelliJ IDEA | `intellij` |
+| Zed | `zed` |
+
+### Preferred Terminal
+
+The terminal app used when you click "Open in Terminal" from quest or file context menus.
+
+| Terminal | Value |
+|----------|-------|
+| Terminal.app | `terminal` (default) |
+| iTerm2 | `iterm2` |
+| Warp | `warp` |
+| Ghostty | `ghostly` |
+
+### Setup Guide
+
+Re-run the first-launch setup wizard at any time. Useful if you skipped steps or need to reconfigure prerequisites like tmux or Claude Code.
+
+## Appearance
+
+### Diff Viewer
+
+Controls how file diffs are displayed in the Changes panel.
+
+**View Mode** -- Choose how diffs are laid out:
+
+- **Side by Side** (default) -- Old and new file content shown in parallel columns.
+- **Unified** -- Changes shown inline in a single column.
+- **Hunk** -- Only changed hunks are displayed.
+
+**Color Theme** -- Syntax highlighting theme for diffs. Options: Pierre (default), GitHub, One Dark, Dracula, Vitesse, Catppuccin, Everforest.
+
+**Render Markdown** -- When enabled, markdown files in diff views are rendered with formatting. Enabled by default.
+
+## Tools
+
+### System Tools
+
+Override the auto-detected paths for system dependencies. Leave blank to use auto-discovery (recommended). Provide an absolute path only if auto-detection fails or you want a specific version.
+
+| Tool | Setting | Default |
+|------|---------|---------|
+| Git | `gitPath` | Auto-detected |
+| Tmux | `tmuxPath` | Auto-detected |
+
+The auto-discovered path is shown as placeholder text in each field.
+
+### Tmux Mode
+
+Controls how Sidequest handles mouse and keyboard input in the terminal panel. Changing this setting requires a reload to apply to existing sessions.
+
+| Mode | Description |
+|------|-------------|
+| **Chill Mode** (default) | Smart handlers give you scroll, click, and drag without needing to know tmux. Best for most users. |
+| **Mouse Mode** | Native tmux mouse mode. You can click panes and scroll, but text selection follows tmux behavior. |
+| **Raw Tmux** | No mouse mode, no training wheels. Pure keyboard-driven tmux experience. |
+
+## Notifications
+
+### Claude Code Integration
+
+Sidequest can notify you when Claude stops and needs attention in any quest session. This works by installing a Claude Code hook that sends events to Sidequest via IPC.
+
+1. Click **Enable** to install the hook.
+2. Once enabled, choose a **notification sound** from the built-in options or import a custom sound file (MP3, WAV, OGG, M4A).
+3. Optionally configure a **custom notification command** -- a shell command that runs whenever a quest needs attention.
+
+Available environment variables for custom commands:
+
+| Variable | Description |
+|----------|-------------|
+| `$SIDEQUEST_PROJECT_NAME` | The project name |
+| `$SIDEQUEST_QUEST_TITLE` | The quest title |
+
+Example:
+
+```bash
+curl -d "$SIDEQUEST_PROJECT_NAME needs attention" https://example.com/notify
+```
+
+Use the **Test Command** button to verify your command works before relying on it.
+
+### Custom Sounds
+
+Click the import button next to the sound selector to add your own audio files. Imported sounds appear under "Your Sounds" in the dropdown and can be deleted individually.
+
+Per-project notification sounds can be configured separately from the project context menu in the sidebar.
+
+## Model Providers
+
+### Claude
+
+**CLI Path** -- Path to the Claude Code CLI executable. Defaults to `claude` (assumes it is on your PATH). Set an absolute path if Claude is installed in a non-standard location.
+
+**Effort Level** -- Controls Claude's reasoning effort when starting new sessions. Higher effort means more thorough analysis but may use more tokens.
+
+| Level | Description |
+|-------|-------------|
+| Low | Minimal reasoning |
+| Medium | Balanced |
+| High | Thorough |
+| Max | Maximum reasoning (default) |
+
+**Chrome Browser Tools** -- When enabled, passes `--chrome` to the Claude CLI to enable browser automation via MCP. Disabled by default.
+
+### Gemini and Codex
+
+Path settings for Gemini CLI and Codex CLI are shown but currently marked as coming soon.
+
+## Extensions
+
+Manage which extension buttons appear in the bottom toolbar. Each extension can be toggled on/off and reordered by dragging.
+
+Built-in extensions:
+
+| Extension | Description |
+|-----------|-------------|
+| **Live Stats** | Real-time token usage and tool call statistics for the active session. |
+| **Toolkit** | Manage skills, commands, and agents for Claude Code. |
+| **Council** | Get second-opinion feedback on the current conversation from Gemini or Codex. |
+
+Only one extension panel can be open at a time. Opening one automatically closes any other.
+
+## Storage
+
+### Handoff Retention
+
+Control how long handoff summaries are kept before automatic cleanup. Options: 7 days, 30 days (default), 90 days, or never delete.
+
+### Orphaned Worktrees
+
+Sidequest scans for worktree directories that are no longer linked to any quest (e.g., left over from deleted quests or crashes). Click **Clean All** to remove them and reclaim disk space.
+
+### Orphaned Tmux Sessions
+
+Similar to orphaned worktrees, Sidequest detects tmux sessions that no longer correspond to active quests. Clean them up to free system resources.
+
+## Import and Export
+
+At the bottom of the settings sidebar, you can:
+
+- **Export Settings** -- Downloads a `sidequest-settings.json` file with all your non-internal settings.
+- **Import Settings** -- Load settings from a previously exported JSON file.
+
+This is useful for syncing settings across machines or sharing your configuration with teammates. Internal state (like column widths and last active workspace) is excluded from exports.

@@ -1,0 +1,61 @@
+---
+interface Props {
+  chart: string;
+}
+
+const { chart } = Astro.props;
+---
+
+<div class="mermaid-wrapper">
+  <pre class="mermaid" set:text={chart} />
+</div>
+
+<script>
+  import mermaid from 'mermaid';
+
+  function getTheme() {
+    const isDark = document.documentElement.dataset.theme === 'dark'
+      || document.documentElement.classList.contains('dark')
+      || document.querySelector('[data-theme="dark"]') !== null;
+    return isDark ? 'dark' : 'default';
+  }
+
+  function renderDiagrams() {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: getTheme(),
+      fontFamily: 'inherit',
+    });
+    mermaid.run({ querySelector: '.mermaid' });
+  }
+
+  // Render on page load and Astro view transitions
+  renderDiagrams();
+  document.addEventListener('astro:page-load', renderDiagrams);
+
+  // Re-render when Starlight theme toggles
+  const observer = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      if (m.attributeName === 'data-theme') {
+        // mermaid needs fresh elements to re-render
+        document.querySelectorAll('.mermaid[data-processed]').forEach((el) => {
+          el.removeAttribute('data-processed');
+          el.innerHTML = el.getAttribute('data-original') || el.textContent || '';
+        });
+        renderDiagrams();
+      }
+    }
+  });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+</script>
+
+<style>
+  .mermaid-wrapper {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+  .mermaid-wrapper :global(svg) {
+    max-width: 100%;
+    height: auto;
+  }
+</style>

@@ -3,4 +3,150 @@ title: Tmux Configuration
 description: Configure tmux settings used by Sidequest for session management.
 ---
 
-> This page is under construction.
+Sidequest uses **tmux** to manage persistent terminal sessions for each quest. Every Claude Code session runs inside a tmux session, which allows sessions to survive app restarts, disconnects, and system sleep.
+
+## Why Tmux?
+
+Without tmux, closing the Sidequest window or restarting the app would kill all running Claude Code sessions. Tmux solves this by decoupling the process from the terminal:
+
+- **Persistence.** Claude Code keeps running even if Sidequest is closed. Reopen the app and your sessions are still there.
+- **Reconnection.** Sidequest attaches a PTY (pseudo-terminal) to the tmux session for streaming output to the UI. If the PTY dies, it can reattach without interrupting Claude.
+- **Isolation.** Each quest gets its own tmux session. Killing one does not affect others.
+
+## Session Naming
+
+All Sidequest tmux sessions use the prefix `sq-` followed by the quest ID:
+
+```
+sq-<quest-uuid>              # Regular quest session
+sq-supervisor-<project-id>   # Supervisor session for a project
+```
+
+You can see your Sidequest sessions alongside any personal tmux sessions:
+
+```bash
+tmux list-sessions
+# sq-a1b2c3d4-e5f6-... : 1 windows (created ...)
+# sq-f7g8h9i0-j1k2-... : 1 windows (created ...)
+# my-personal-session   : 3 windows (created ...)
+```
+
+Sidequest only manages sessions with the `sq-` prefix. Your personal tmux sessions are never touched.
+
+## How Sessions Work
+
+When you activate a quest, Sidequest:
+
+1. Creates a detached tmux session: `tmux new-session -d -s sq-<quest-id> -c <working-dir>`
+2. Runs Claude Code inside it via your login shell (`zsh -ilc "claude ..."`) to ensure PATH includes tools like `node`, `nvm`, `mise`, etc.
+3. Attaches a PTY to stream output to the Sidequest UI
+4. Auto-accepts Claude Code's trust/permission prompts by detecting the dialog and sending the appropriate keypress
+
+The session runs with `LANG=en_US.UTF-8` and `LC_CTYPE=en_US.UTF-8` to ensure Unicode characters render correctly. Without this, apps launched from Finder inherit a minimal locale from launchd that causes tmux to replace Unicode with underscores.
+
+## Tmux Path Resolution
+
+Sidequest auto-discovers your tmux installation by:
+
+1. Querying your login shell (`zsh -ilc "whence -p tmux"` or equivalent)
+2. Falling back to well-known paths if shell resolution fails:
+   - `/opt/homebrew/bin/tmux` (Homebrew on Apple Silicon)
+   - `/usr/local/bin/tmux` (Homebrew on Intel)
+   - `/usr/bin/tmux` (system package manager)
+
+You can override the tmux path in **Settings** if auto-discovery does not find the correct binary.
+
+Sidequest always resolves to an absolute path. A bare `tmux` command would fail when the app is launched from Finder, since Finder-launched apps inherit a minimal `PATH` that does not include Homebrew directories.
+
+## Configuration
+
+### Scrollback Buffer
+
+Sidequest caps each session's scrollback to **1000 lines** to prevent memory bloat when many quests run simultaneously. This is set per-session and does not affect your global tmux config:
+
+```
+set-option -t sq-<id> history-limit 1000
+```
+
+The Sidequest UI uses xterm.js with its own scrollback, so you typically do not need tmux's scrollback buffer.
+
+### Mouse Mode
+
+By default, Sidequest enables mouse mode on quest sessions so scroll events work in the embedded terminal:
+
+```
+set-option -t sq-<id> mouse on
+```
+
+You can switch between tmux interaction modes in Settings:
+
+- **Chill mode** (default) -- mouse mode enabled, smooth scrolling in the UI terminal
+- **Raw mode** -- mouse mode disabled, tmux receives raw input for advanced users who want native tmux keybindings
+
+### Your Global Config
+
+Sidequest does not read or modify your `~/.tmux.conf`. Session-level options are set independently. However, your global config still applies as the baseline for all sessions. If you have aggressive settings (like very high `history-limit`), the per-session override will take precedence for Sidequest sessions.
+
+## Installation
+
+### macOS
+
+```bash
+brew install tmux
+```
+
+### Linux
+
+```bash
+# Debian/Ubuntu
+sudo apt install tmux
+
+# Fedora
+sudo dnf install tmux
+
+# Arch
+sudo pacman -S tmux
+```
+
+Verify the installation:
+
+```bash
+tmux -V
+# tmux 3.4
+```
+
+Sidequest requires tmux to be installed. If tmux is not found, quest sessions cannot be created.
+
+## Troubleshooting
+
+### "tmux is not installed"
+
+Sidequest could not find tmux on your system. Install it using the commands above, then restart Sidequest. If tmux is installed in a non-standard location, set the path manually in Settings.
+
+### Sessions survive after quitting Sidequest
+
+This is by design. Tmux sessions persist independently of the app. When you reopen Sidequest, it reconciles with existing `sq-` sessions and reattaches automatically. If you want to kill orphaned sessions manually:
+
+```bash
+# Kill a specific session
+tmux kill-session -t sq-<quest-id>
+
+# Kill all Sidequest sessions
+tmux list-sessions -F '#{session_name}' | grep '^sq-' | xargs -I{} tmux kill-session -t {}
+```
+
+### Unicode characters showing as underscores
+
+This happens when tmux does not have a UTF-8 locale. Sidequest sets `LANG=en_US.UTF-8` when creating sessions, but if your system does not have this locale installed, you may see garbled output. Ensure UTF-8 locales are available:
+
+```bash
+locale -a | grep UTF-8
+```
+
+### Claude binary not found inside tmux
+
+When launched from Finder, the app has a minimal PATH. Sidequest resolves the full path to both `tmux` and `claude` before creating sessions, and runs commands via your login shell (`zsh -ilc`) to source `.zprofile` and `.zshrc`. If Claude still is not found, set the explicit path in Settings.
+
+### Session appears dead but tmux is running
+
+If the Sidequest UI shows a session as disconnected but `tmux list-sessions` shows it alive, the PTY attachment may have died. Click the quest to reattach. Sidequest will detect the stale PTY, clean it up, and create a fresh attachment.

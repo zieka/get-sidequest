@@ -3,4 +3,61 @@ title: First Workspace
 description: Create your first workspace and project in Sidequest.
 ---
 
-> This page is under construction.
+Sidequest organizes your work into **workspaces** and **projects**. The sidebar on the left is your navigation hub -- workspaces are collapsible groups, and projects are the repositories within them.
+
+## Concepts
+
+**Workspace** -- A named group for organizing related projects. Think of it as a folder or team label. Examples: "Backend Services", "Client Work", "Personal".
+
+**Project** -- A directory on disk, typically a git repository. Projects live inside workspaces and are where you create quests. Sidequest supports three project types:
+
+- **Git Repo** -- A single git repository (has a `.git` directory)
+- **Multi Repo** -- A parent directory containing multiple git repos as immediate children
+- **Directory** -- A non-git directory (allowed when you explicitly opt in)
+
+## Create a Workspace
+
+1. In the sidebar, click **Add Workspace** at the bottom
+2. Type a name (e.g., "My Projects") and press **Enter**
+3. The workspace appears in the sidebar, ready for projects
+
+Workspaces are purely organizational. They don't correspond to any directory on disk.
+
+## Add a Project
+
+1. Click the **+** icon next to your workspace name, or right-click the workspace and select **Add Project**
+2. A file picker opens -- navigate to your project directory and select it
+3. Sidequest scans the directory:
+   - If it contains a `.git` folder, it's added as a **Git Repo**
+   - If it contains child directories with `.git` folders, it's detected as a **Multi Repo**
+   - If it's neither, you'll be prompted to either run `git init` or add it as a plain directory
+
+The project appears under its workspace in the sidebar, using the directory name as its display name.
+
+## Sidebar Structure
+
+The sidebar displays your workspace tree:
+
+```
+Workspaces
+  Backend Services        <-- workspace
+    api-server            <-- project (git repo)
+    auth-service          <-- project (git repo)
+  Frontend                <-- workspace
+    web-app               <-- project (git repo)
+```
+
+- Click a **workspace** name to expand or collapse it
+- Click a **project** to select it and view its quest board
+- Drag projects to reorder them within a workspace or move them between workspaces
+- Right-click a workspace or project for additional options (rename, delete, move)
+
+## What Happens When You Select a Project
+
+Selecting a project opens its **quest log** in the main panel. The quest log is where you create, manage, and run quests for that project. Each project has its own independent set of quests organized into Backlog and Active sections.
+
+## Tips
+
+- You can add the same directory as a project in multiple workspaces if needed.
+- Multi-repo projects are useful for monorepo-adjacent setups where a parent directory holds several related repos. Sidequest will detect and list the child repos automatically.
+- Projects with a valid git repository enable the full feature set: worktree-based isolation for Changes quests, branch selection, diff stats, and GitHub integration.

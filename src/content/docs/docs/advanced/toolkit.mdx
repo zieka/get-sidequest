@@ -3,4 +3,194 @@ title: Toolkit
 description: Extend Sidequest with custom tools and integrations.
 ---
 
-> This page is under construction.
+import Mermaid from '../../../../components/Mermaid.astro';
+
+The Toolkit is Sidequest's built-in extension for managing **skills**, **commands**, and **agents** -- the three types of customizations that Claude Code understands. It also serves as a window into the broader extension system that powers Sidequest's side panels.
+
+## Extension System Architecture
+
+Sidequest has a lightweight extension system that loads panels into the right sidebar of the app. Each extension is a directory containing a `manifest.json` and a JavaScript/TypeScript entry point.
+
+Extensions are loaded from:
+
+```
+~/.sidequest/extensions/
+  my-extension/
+    manifest.json
+    src/
+      index.ts
+```
+
+The **ExtensionHost** manages the full lifecycle -- activation, deactivation, visibility toggling, and event broadcasting. Extensions receive a sandboxed API surface (`SidequestAPI`) that is gated by a capability system declared in their manifest.
+
+### Extension Lifecycle
+
+<Mermaid chart={`graph TD
+  A[Startup: Scan extensions/] --> B[Parse each manifest.json]
+  B --> C[Register in ExtensionHost]
+  C --> D{User opens panel}
+  D --> E["Call activate(container, api)"]
+  E --> F{Panel closed}
+  F -->|"keepAlive: true"| G[Hidden, state preserved]
+  F -->|"keepAlive: false"| H["Call deactivate()"]
+  G -->|Reopened| E`} />
+
+1. Sidequest scans `~/.sidequest/extensions/` at startup for directories containing `manifest.json`
+2. Each manifest is parsed for `id`, `name`, `version`, and `capabilities`
+3. When a user opens an extension panel, the host calls the module's `activate()` method, passing a container DOM element and the sandboxed API
+4. When the panel is closed, `deactivate()` is called to clean up
+5. Extensions with `keepAlive: true` are hidden instead of destroyed when their panel closes, so they can maintain background state
+
+### Manifest Format
+
+```json
+{
+  "id": "my-extension",
+  "name": "My Extension",
+  "version": "1.0.0",
+  "description": "What this extension does",
+  "main": "src/index.ts",
+  "keepAlive": false,
+  "capabilities": {
+    "quest:read": true,
+    "skills:read": true,
+    "skills:write": true
+  },
+  "contributes": {
+    "panel": {
+      "label": "My Panel"
+    }
+  }
+}
+```
+
+### Manifest Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `id` | Yes | Unique identifier (e.g., `sidequest.toolkit`) |
+| `name` | Yes | Display name |
+| `version` | Yes | Semver version string |
+| `description` | No | Short description |
+| `main` | No | Entry point file (defaults to `index.js`) |
+| `keepAlive` | No | If `true`, extension stays loaded when hidden (defaults to `false`) |
+| `capabilities` | No | Map of capability scopes the extension requires |
+| `contributes` | No | UI contributions (currently only `panel` with a `label`) |
+
+### Capabilities
+
+Extensions declare the API scopes they need. Undeclared capabilities are denied at runtime. First-party extensions (IDs starting with `sidequest.`) skip runtime prompts; third-party extensions with sensitive capabilities require user confirmation.
+
+| Capability | Description |
+|------------|-------------|
+| `session:read` | Read session stats (tokens, tool usage) |
+| `quest:read` | Read active quest info |
+| `workspace:read` | Read workspace/project info |
+| `skills:read` | List and read skills, commands, agents |
+| `skills:write` | Create, update, delete skills/commands/agents |
+| `shell:open` | Open URLs, editors, terminals, Finder |
+| `ui:notify` | Show notifications |
+| `fs:read` | Read files from the filesystem |
+| `fs:write` | Write files to the filesystem |
+| `net:request` | Make HTTP requests |
+| `process:spawn` | Spawn child processes (array of allowed executables) |
+
+Capabilities that are **always prompted** at runtime for third-party extensions, even when declared: `fs:read`, `fs:write`, `net:request`, `process:spawn`.
+
+### Extension Module Interface
+
+Your entry point must export an object (or default export) with these methods:
+
+```typescript
+export default {
+  activate(ctx: ExtensionContext): void | Promise<void> {
+    // ctx.container — the DOM element to render into
+    // ctx.api — the SidequestAPI proxy (capability-gated)
+    // ctx.extension — { id, name, version, directory }
+    // ctx.onDismiss — callback to close the panel
+  },
+
+  deactivate(): void | Promise<void> {
+    // Clean up listeners, unmount UI
+  },
+
+  onVisibilityChanged(visible: boolean): void {
+    // Called when keepAlive extension is shown/hidden
+  },
+}
+```
+
+## Built-in Extensions
+
+Sidequest ships with three built-in extensions. They are registered by the app and always available in the sidebar toolbar.
+
+### Session Stats (`sidequest.stats`)
+
+Displays live token usage, costs, and tool timing for the active quest's Claude Code session. Uses `keepAlive: true` so it maintains state across panel toggles. Subscribes to `session.statsUpdated` events and re-renders automatically.
+
+Capabilities: `session:read`, `quest:read`
+
+### Toolkit (`sidequest.toolkit`)
+
+The skill, command, and agent manager described below. Lets you create, edit, search, and delete Claude Code customizations from within Sidequest.
+
+Capabilities: `skills:read`, `skills:write`, `quest:read`, `workspace:read`, `shell:open`
+
+### Council (`sidequest.council`)
+
+Spawns a separate Claude Code session to review the current quest's work and provide feedback from an alternative perspective. Supports switching between model providers (Gemini, Codex). The council session runs in its own terminal and can see the quest's working directory.
+
+Capabilities: `process:spawn` (restricted to `claude`), `quest:read`
+
+## Using the Toolkit Extension
+
+Open the Toolkit panel from the right sidebar (wrench icon). It provides a unified interface for managing all three types of Claude Code customizations.
+
+### Item Types
+
+| Type | Claude Code path | Description |
+|------|-----------------|-------------|
+| Skill | `~/.claude/skills/*.md` | Persistent instructions loaded into Claude's context |
+| Command | `~/.claude/commands/*.md` | Slash commands invocable via `/user:command-name` |
+| Agent | `~/.claude/agents/*.md` | Sub-agents with their own model, tools, and turn limits |
+
+### Creating Items
+
+1. Click the **+** button in the Toolkit header
+2. Choose **Skill**, **Command**, or **Agent**
+3. Fill in the name and description
+4. For skills, choose the save target:
+   - **Global** -- saved to `~/.claude/skills/` (available in all projects)
+   - **Project** -- saved to `<project-path>/.claude/skills/` (project-specific)
+5. For agents, configure additional fields:
+   - **Model** -- opus, sonnet, or haiku (or default)
+   - **Allowed Tools** -- which tools the agent can use (Bash, Read, Write, etc.)
+   - **Max Turns** -- limit on agent execution turns
+6. Write the instructions in the body editor
+7. Click **Save**
+
+### Local Files
+
+Check the **Local** checkbox to save with a `.local.md` extension. Local files are typically gitignored and stay on your machine -- useful for machine-specific paths, credentials references, or personal workflow preferences.
+
+### Searching and Grouping
+
+The Toolkit scans these directories for items:
+
+- `~/.claude/skills/`
+- `~/.claude/commands/`
+- `~/.claude/agents/`
+- `~/.claude/plugins/marketplaces/`
+- `<project-path>/.claude/skills/` (when a project is selected)
+
+Use the search bar to filter by name or description. Toggle between **Type** grouping (skills, commands, agents) and **Scope** grouping (project vs. user) using the buttons next to the search bar.
+
+### Context Menu Actions
+
+Right-click any item to:
+
+- Edit in the Toolkit editor
+- Open in your preferred code editor
+- Open the containing folder in Finder
+- Open a terminal at the item's directory
+- Delete the item

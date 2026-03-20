@@ -3,4 +3,128 @@ title: Multi-Project Workflows
 description: Manage quests across multiple repositories and projects simultaneously.
 ---
 
-> This page is under construction.
+Sidequest organizes work in a two-level hierarchy: **Workspaces** contain **Projects**, and Projects contain **Quests**. This structure lets you manage Claude Code sessions across multiple repositories simultaneously.
+
+## The Hierarchy
+
+```
+Workspace ("Acme Corp")
+  |-- Project: frontend    (git repo at ~/repos/acme-frontend)
+  |     |-- Quest: Add dark mode       (Changes)
+  |     |-- Quest: Investigate bundle size (Research)
+  |
+  |-- Project: backend     (git repo at ~/repos/acme-backend)
+  |     |-- Quest: Add auth middleware  (Changes)
+  |
+  |-- Project: monorepo    (multi-repo at ~/repos/acme-platform)
+        |-- Quest: Update shared types  (Changes)
+```
+
+### Workspaces
+
+A workspace is a named container for grouping related projects. It has no path on disk -- it is purely organizational. Use workspaces to group projects by team, client, or initiative.
+
+Examples: "Work", "Side Projects", "Client - Acme"
+
+### Projects
+
+A project points to a directory on your filesystem.
+
+### Quests
+
+Quests belong to a project and represent a unit of work. Each quest gets its own Claude Code session, and Changes quests get their own git branch and worktree.
+
+## Working with Multiple Projects
+
+### Adding Projects to a Workspace
+
+1. Create a workspace (or use the Default workspace)
+2. Click **Add Project** and select a directory
+3. Sidequest scans the path and auto-detects the project type
+4. For Multi-Repo directories, Sidequest lists the child repos it found
+
+You can add as many projects as you need. Each project appears as a separate kanban board in the sidebar.
+
+### Running Quests Across Projects
+
+Each project has its own set of quests. You can have active quests running simultaneously in different projects -- for example, a backend feature and a frontend feature at the same time. Each runs in its own tmux session with its own worktree.
+
+Switch between projects in the sidebar to view each project's quest board. Active sessions keep running in the background when you switch away.
+
+## Multi-Repo Projects
+
+Multi-repo projects are designed for codebases split across multiple repositories in a single parent directory. This is common with:
+
+- Microservice architectures (`~/services/auth`, `~/services/api`, `~/services/web`)
+- Separated frontend/backend repos under one folder
+- Organizations that keep repos in a shared parent directory
+
+### How Multi-Repo Detection Works
+
+When you select a directory that is **not** itself a git repo, Sidequest scans its immediate children for `.git` directories. If it finds any, the project is classified as **Multi-Repo** and the child repo paths are stored.
+
+```
+~/repos/acme-platform/          # Not a git repo itself
+  frontend/                      # Has .git -> child repo
+  backend/                       # Has .git -> child repo
+  shared-lib/                    # Has .git -> child repo
+  docs/                          # No .git -> ignored
+```
+
+### Multi-Repo Worktrees
+
+When you create a Changes quest in a multi-repo project, Sidequest creates a worktree for **each child repo** under a shared quest directory:
+
+```
+~/.sidequest/multirepo/<quest-id>/
+  frontend/       # Worktree branched from ~/repos/acme-platform/frontend
+  backend/        # Worktree branched from ~/repos/acme-platform/backend
+  shared-lib/     # Worktree branched from ~/repos/acme-platform/shared-lib
+```
+
+All child worktrees use the **same branch name**, so the change can span multiple repos with a consistent branch. Claude Code runs in the parent multirepo directory and can see all child worktrees.
+
+### Git Status in Multi-Repos
+
+Sidequest tracks changes across all nested git repos within a worktree. The diff viewer shows changes prefixed with the child repo name:
+
+```
+frontend/src/App.tsx        (modified)
+backend/src/routes/auth.ts  (added)
+shared-lib/types/index.ts   (modified)
+```
+
+## Monorepo Projects
+
+If your monorepo is a **single git repository** (e.g., a Turborepo, Nx, or Lerna project), add it as a regular Git Repo project. Sidequest handles single-repo worktrees natively. The multi-repo type is specifically for directories containing **multiple independent git repositories**.
+
+## Switching Between Projects
+
+Use the sidebar to switch between projects. Each project maintains its own quest board state independently. Switching projects does not affect running sessions -- all active quests keep their tmux sessions alive in the background.
+
+## Organizing Large-Scale Work
+
+For teams or individuals managing many repositories, consider this structure:
+
+```
+Workspace: "Platform Team"
+  Project: API Gateway       (git_repo)
+  Project: Auth Service      (git_repo)
+  Project: Web Dashboard     (git_repo)
+
+Workspace: "Mobile Team"
+  Project: iOS App           (git_repo)
+  Project: Android App       (git_repo)
+  Project: Shared SDK        (git_repo)
+
+Workspace: "Infrastructure"
+  Project: All Services      (multi_repo at ~/services/)
+  Project: Terraform         (git_repo)
+```
+
+Tips for staying organized:
+
+- **One workspace per team or initiative.** Keep related projects together.
+- **Use Research quests for cross-cutting questions.** They run directly in the repo without creating branches.
+- **Name quests descriptively.** The quest title is used to generate the branch name.
+- **Archive completed quests** instead of deleting them if you want to preserve the branch reference for later.

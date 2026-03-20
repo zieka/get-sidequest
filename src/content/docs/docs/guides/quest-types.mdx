@@ -3,4 +3,89 @@ title: Quest Types
 description: Understand the difference between Research and Changes quests.
 ---
 
-> This page is under construction.
+import Mermaid from '../../../../components/Mermaid.astro';
+
+Every quest in Sidequest has a type that determines how it interacts with your codebase. Picking the right type matters -- it controls whether the quest gets its own git branch, where Claude Code runs, and what cleanup happens when you're done.
+
+## Research
+
+Research quests run directly in your project's original working directory. No branch is created, no worktree is set up. Claude Code reads and explores the codebase in place.
+
+Use Research quests when you want to:
+
+- Investigate how a system works
+- Ask questions about architecture or dependencies
+- Audit code for patterns, bugs, or security issues
+- Explore a codebase without making changes
+
+Because multiple Research quests share the same directory, Sidequest matches each quest to its conversation by checking the first user message in Claude's JSONL logs. This means two Research quests on the same project won't get their conversations mixed up.
+
+### What happens on completion
+
+The Claude Code session is terminated. No branches or worktrees need cleanup since none were created.
+
+## Changes
+
+Changes quests are for writing code. When activated, Sidequest creates an isolated [git worktree](https://git-scm.com/docs/git-worktree) at `~/.sidequest/worktrees/<quest-id>/` and checks out a new branch. Claude Code runs inside this worktree, so changes are completely isolated from your main working directory and from other quests.
+
+Use Changes quests when you want to:
+
+- Implement a feature or fix a bug
+- Refactor code
+- Create a pull request
+- Work on a GitHub issue
+
+### Branch and base branch
+
+When you create a Changes quest, Sidequest asks Claude to generate a branch name from your prompt (e.g., `feat/add-auth`). If Claude's suggestion isn't usable, it falls back to a random three-word name.
+
+You also pick a **base branch** -- the branch your new worktree is forked from. This defaults to the currently checked-out branch but can be any local branch. The base branch is used when computing diff stats and when `gh pr create` determines the PR target.
+
+### Plan mode
+
+Changes quests support an optional **Plan mode** checkbox at creation time. When enabled, Claude Code starts in plan mode -- it proposes changes without applying them until you approve.
+
+### What happens on completion
+
+The Claude Code session is killed, the worktree directory is removed via `git worktree remove`, and the quest row is deleted from the database. If the worktree can't be cleanly removed (e.g., open file handles), Sidequest falls back to deleting the directory directly and pruning stale worktree references.
+
+## Review
+
+Review quests are a specialized variant of Changes quests. They create a worktree and branch just like Changes, but are purpose-built for reviewing pull requests. When you create a Review quest, you select an open PR from your repo; Sidequest checks out the PR's head branch and sends Claude a `/review <pr-number>` command.
+
+Use Review quests when you want to:
+
+- Get an AI-assisted code review of an open pull request
+- Understand what a PR changes before merging
+
+## Choosing a type
+
+| | Research | Changes | Review |
+|---|---|---|---|
+| Creates a git worktree | No | Yes | Yes |
+| Creates a branch | No | Yes | Yes |
+| Runs in | Project directory | `~/.sidequest/worktrees/` | `~/.sidequest/worktrees/` |
+| Best for | Exploration, questions | Features, fixes, refactors | PR reviews |
+
+If you're unsure, start with **Changes** -- it's the default and the safest option since your work is always isolated.
+
+## Quest lifecycle
+
+<Mermaid chart={`graph LR
+  A[Backlog] -->|Activate| B[Active]
+  B -->|Complete| C[Removed]
+  B -->|Pause| A`} />
+
+**Backlog** -- The quest is defined but not running. No session, no worktree yet. Click a backlog quest to edit its title or description.
+
+**Active** -- The quest has a live Claude Code session. For Changes/Review quests, the worktree and branch are created when the quest first becomes active.
+
+When you **complete** a quest, it is removed from the board entirely. Its session is killed, worktrees are cleaned up, and the database row is deleted.
+
+### Moving quests between columns
+
+Drag and drop quests between the Active and Backlog sections. Dropping a backlog quest onto the Active section header (or onto an active quest) promotes it to active and launches its session. Dropping an active quest onto the Backlog section pauses it by killing the session.
+
+You can also reorder quests within a section by dragging them. Active quests are sorted by total diff size (additions + deletions) by default, but manual reordering is supported.
+
+Right-click a quest to access additional actions: complete, move to backlog, open in editor, open in terminal, create a journal entry, or initiate a handoff.

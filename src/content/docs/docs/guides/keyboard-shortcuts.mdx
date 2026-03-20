@@ -3,4 +3,73 @@ title: Keyboard Shortcuts
 description: Speed up your workflow with Sidequest keyboard shortcuts.
 ---
 
-> This page is under construction.
+Sidequest is designed for keyboard-driven workflows. Most actions have shortcuts so you can stay in flow without reaching for the mouse.
+
+Press **Cmd+/** to open the shortcuts reference inside the app at any time.
+
+## Navigation
+
+Move between quests without leaving the keyboard:
+
+- **Cmd+[** -- Go back to the previous quest in your navigation history.
+- **Cmd+]** -- Go forward to the next quest in your navigation history.
+- **Cmd+Shift+P** -- Open the command palette to search and jump to any quest, project, or file across all your workspaces.
+
+Navigation history works like a browser -- every time you activate a quest, it gets pushed to the stack. Back and forward let you retrace your steps across projects.
+
+## Panel Toggles
+
+Each panel in the layout has a number shortcut. These toggle the panel on and off:
+
+- **Cmd+1** -- Workspaces sidebar
+- **Cmd+2** -- Quest Log
+- **Cmd+3** -- Terminal
+- **Cmd+4** -- Changes (diff viewer)
+- **Cmd+5, 6, ...** -- Extension panels (in the order they appear in your bottom toolbar)
+
+Only one extension panel can be open at a time. Toggling an extension closes any other open extension.
+
+**Tip:** Hold down the Cmd key for about a second to see shortcut labels appear above each panel toggle button in the bottom toolbar.
+
+## Terminal Font
+
+Adjust the terminal font size on the fly:
+
+- **Cmd+=** (or **Cmd+Plus**) -- Increase font size
+- **Cmd+-** -- Decrease font size
+
+These affect the xterm.js terminal where Claude Code sessions run.
+
+## General
+
+- **Cmd+,** -- Open Settings
+- **Cmd+R** -- Reload the window (useful if the UI gets into a bad state)
+- **Cmd+/** -- Show keyboard shortcuts reference
+
+## Menu Bar Shortcuts
+
+Standard macOS shortcuts are available from the Edit menu:
+
+- **Cmd+Z** -- Undo
+- **Cmd+Shift+Z** -- Redo
+- **Cmd+X** -- Cut
+- **Cmd+C** -- Copy
+- **Cmd+V** -- Paste
+- **Cmd+A** -- Select All
+
+## Command Palette
+
+The command palette (**Cmd+Shift+P**) is the fastest way to do almost anything:
+
+1. Start typing to search quests across all projects.
+2. Select a quest to jump directly to it and activate its terminal session.
+3. From the results, you can also create new quests, open quests in your editor, or activate backlog quests.
+4. Type **>** at the start of your query to switch to file search mode, which fuzzy-searches files in the active quest's worktree.
+
+## Workflow Tips
+
+**Rapid context switching.** Use Cmd+Shift+P to jump between quests in different projects. Combined with Cmd+[ and Cmd+], you can flip between two quests you are actively working on without scrolling through the sidebar.
+
+**Focused mode.** Toggle off panels you do not need. For example, Cmd+1 to hide the sidebar and Cmd+2 to hide the quest log gives you a full-width terminal. Cmd+4 on its own gives you a full-width diff viewer.
+
+**Discover shortcuts.** Hold Cmd for a moment to see all panel toggle shortcuts overlaid on the bottom toolbar. This is a quick way to learn the numbers without memorizing them.
