@@ -3,4 +3,100 @@ title: Setup
 description: Set up Sidequest dependencies including Claude Code CLI, tmux, and git.
 ---
 
-> This page is under construction.
+Sidequest requires four command-line tools to function. On first launch, the setup wizard checks each one and offers to install any that are missing.
+
+## Required Dependencies
+
+| Tool | Purpose |
+|------|---------|
+| **Claude Code CLI** | The AI agent that runs inside each quest session |
+| **tmux** | Terminal multiplexer that keeps sessions alive in the background |
+| **git** | Version control -- used for worktrees, branching, and diffs |
+| **GitHub CLI (gh)** | Optional but recommended -- enables issue linking, PR creation, and PR reviews |
+
+## Installing Dependencies
+
+### macOS (Homebrew)
+
+```bash
+# Claude Code CLI (requires Node.js)
+npm install -g @anthropic-ai/claude-code
+
+# tmux, git, and GitHub CLI
+brew install tmux git gh
+```
+
+If you don't have Homebrew, install it first:
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+If you don't have Node.js (required for Claude Code), install it from [nodejs.org](https://nodejs.org) or via Homebrew:
+
+```bash
+brew install node
+```
+
+### Linux (apt)
+
+```bash
+# Claude Code CLI (requires Node.js)
+npm install -g @anthropic-ai/claude-code
+
+# tmux, git, and GitHub CLI
+sudo apt-get install -y tmux git gh
+```
+
+### Linux (dnf)
+
+```bash
+npm install -g @anthropic-ai/claude-code
+sudo dnf install -y tmux git gh
+```
+
+### Linux (pacman)
+
+```bash
+npm install -g @anthropic-ai/claude-code
+sudo pacman -S --noconfirm tmux git gh
+```
+
+## Setup Wizard
+
+When you launch Sidequest for the first time, the setup wizard walks you through dependency validation:
+
+1. A welcome screen introduces the app
+2. The **Check Dependencies** step scans your system for each tool
+3. If a tool is found, its version is displayed with a green checkmark
+4. If a tool is missing and the prerequisite package manager is available, an **Install** button appears to install it directly
+5. If auto-install is not possible (e.g., npm is not installed), the wizard shows what's needed and provides a **Copy** button for the manual install command
+
+You can skip missing dependencies and continue, but Sidequest will not be able to create sessions without Claude Code CLI and tmux.
+
+## Path Resolution
+
+Sidequest resolves tool paths using your login shell's environment. This means tools installed via version managers like nvm, mise, fnm, or volta are detected automatically.
+
+If Sidequest can't find a tool (common when launched from Finder on macOS, which has a minimal PATH), it also checks well-known install locations:
+
+- `/opt/homebrew/bin/` (Homebrew on Apple Silicon)
+- `/usr/local/bin/` (Homebrew on Intel / manual installs)
+- `/usr/bin/` (system packages)
+
+### Custom Tool Paths
+
+If auto-discovery doesn't find your tools, you can set explicit paths in **Settings**. Open the settings panel and configure custom paths for git, tmux, or Claude Code. Leave a field empty to revert to auto-discovery.
+
+## Verifying Your Setup
+
+After completing the wizard, you can re-check dependencies at any time by reopening **Settings**. The setup wizard also runs each time you launch Sidequest until all required dependencies are found.
+
+To verify tools are working from your terminal:
+
+```bash
+claude --version
+tmux -V
+git --version
+gh --version
+```

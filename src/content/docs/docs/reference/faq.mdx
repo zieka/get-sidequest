@@ -3,4 +3,175 @@ title: FAQ
 description: Frequently asked questions about Sidequest installation, usage, and troubleshooting.
 ---
 
-> This page is under construction.
+## General
+
+### Where is my data stored?
+
+All Sidequest data lives in two locations:
+
+- **`~/.sidequest/`** -- worktrees, journals, extensions, hooks, logs, sounds, attachments, and the IPC socket
+- **Database** -- `~/Library/Application Support/com.sidequest.app/sidequest.db` on macOS, `~/.local/share/com.sidequest.app/sidequest.db` on Linux
+
+### What happens to my worktrees if I close the app?
+
+Nothing. Worktrees are regular git worktrees on disk -- they persist independently of Sidequest. Your quest branches, uncommitted changes, and file modifications are all preserved. When you reopen Sidequest, it reconnects to existing tmux sessions and worktrees.
+
+### What happens to running Claude Code sessions if I close the app?
+
+They keep running. Each Claude Code session runs inside a tmux session, which is independent of the Sidequest process. When you reopen the app, Sidequest detects existing `sq-` prefixed tmux sessions and reattaches to them. You will not lose any in-progress work.
+
+### Can I use Sidequest with multiple git remotes?
+
+Yes. Sidequest works with whatever remotes your repository has configured. When creating a quest branch, the worktree inherits all remotes from the parent repo since they share the same git object store. Push targets, pull requests, and remote tracking all work as they would in a normal checkout.
+
+### Can multiple quests edit the same files?
+
+Technically yes, since each quest has its own worktree with its own copy of every file. Two quests can modify the same file independently without interfering with each other during development. However, when merging both branches back to main, you will encounter standard git merge conflicts that need to be resolved. This is no different from two developers editing the same file on separate branches.
+
+### How does Sidequest interact with my existing git workflow?
+
+Sidequest creates standard git worktrees and branches. Everything it does is visible to `git` and compatible with your existing workflow:
+
+- Branches created by quests show up in `git branch -a`
+- Worktrees show up in `git worktree list`
+- You can push quest branches, open PRs, and merge them using any tool (GitHub CLI, web UI, your IDE)
+- Sidequest never modifies your main branch or existing branches -- it only creates new branches from the base you specify
+
+### Does Sidequest modify my tmux or git configuration?
+
+No. Sidequest does not read or write `~/.tmux.conf` or `~/.gitconfig`. It sets per-session tmux options (scrollback limit, mouse mode) that do not affect your global config. All git operations use standard commands without modifying your global or local git settings.
+
+### Can I use my own editors and terminals with Sidequest?
+
+Yes. Sidequest has settings for preferred editor and preferred terminal. Right-click context menus throughout the app offer "Open in Editor" and "Open in Terminal" options that respect your choices.
+
+## Quest Management
+
+### How do I recover a quest that crashed?
+
+If a Claude Code session crashes or becomes unresponsive:
+
+1. Check if the tmux session is still alive:
+   ```bash
+   tmux list-sessions | grep sq-
+   ```
+2. If the session exists, click the quest in Sidequest to reattach. Sidequest will detect the stale PTY connection and create a fresh one.
+3. If the session is gone, the quest worktree still exists at `~/.sidequest/worktrees/<quest-id>`. Activate the quest again in Sidequest to create a new Claude Code session in the same worktree. Your files and branch are preserved.
+4. If the quest is stuck in a bad state, you can delete and recreate it. The branch will still exist in git and can be reused.
+
+### What is the difference between Research and Changes quests?
+
+- **Changes** quests create a git worktree with a dedicated branch. Claude Code runs in the isolated worktree and can make file modifications, commits, and PRs. Use these for any task that modifies code.
+- **Research** quests do not create worktrees. Claude Code runs directly in the project's root directory in a read-only exploratory mode. Use these for code analysis, question-answering, and investigation tasks.
+- **Review** quests are for reviewing existing pull requests. They check out the PR branch into a worktree for examination.
+
+### What happens when I delete a quest?
+
+Sidequest cleans up in this order:
+
+1. Kills the tmux session (if running)
+2. Runs `git worktree remove --force` from the parent repository
+3. Falls back to deleting the worktree directory directly if the git command fails
+4. Prunes stale worktree references with `git worktree prune`
+5. Removes the quest record from the database
+
+The git branch itself is not deleted. If you want to remove it, do so manually with `git branch -D <branch-name>`.
+
+### Can I reorder quests in the backlog?
+
+Yes. Drag quests within the backlog column to set their priority order. When the supervisor's **pull backlog to active** feature is enabled, it promotes quests in this sort order -- the topmost backlog quest is activated first.
+
+## Supervisor
+
+### Why does the supervisor need `--dangerously-skip-permissions`?
+
+The supervisor runs autonomously as a long-lived Claude Code session that monitors and manages other sessions. It needs to execute shell commands (to query the database, inspect tmux sessions, and interact with quest sessions) without manual approval for each action. This flag is set only on the supervisor session, not on regular quest sessions.
+
+### Can I run multiple supervisors?
+
+Each project can have one supervisor. Different projects can each have their own supervisor running simultaneously. Supervisor sessions are named `sq-supervisor-<project-id>` to avoid conflicts.
+
+### The supervisor stopped unexpectedly. What happened?
+
+Common causes:
+
+- **All quests removed.** The supervisor auto-stops when a project has no quests.
+- **Claude API error.** If the Claude session encounters a persistent API error, it may exit. Check the supervisor terminal for error messages.
+- **tmux killed externally.** If the `sq-supervisor-<project-id>` tmux session is killed from the command line, the supervisor stops.
+
+To restart: toggle the supervisor off and on again from the project header.
+
+## Troubleshooting
+
+### "tmux is not installed"
+
+Sidequest requires tmux for session management. Install it:
+
+```bash
+# macOS
+brew install tmux
+
+# Debian/Ubuntu
+sudo apt install tmux
+
+# Fedora
+sudo dnf install tmux
+```
+
+If tmux is installed in a non-standard location, set the path in Settings.
+
+### Claude binary not found
+
+When launched from Finder, macOS apps inherit a minimal PATH that may not include Homebrew or nvm directories. Sidequest resolves the Claude binary path through your login shell, but if this fails:
+
+1. Open Settings (Cmd+,)
+2. Set the full path to `claude` (e.g., `/Users/you/.nvm/versions/node/v22.x/bin/claude`)
+3. Restart Sidequest
+
+Find the path with:
+```bash
+which claude
+```
+
+### Quests show "needs attention" but Claude is not waiting
+
+The "needs attention" indicator is triggered by Claude Code's stop hook. If the hook fires but Claude has already continued (e.g., it paused briefly then resumed), the indicator may be stale. Click the quest to clear it. If this happens frequently, check that the hook script at `~/.sidequest/hooks/on-claude-stop.sh` is current -- reinstall it from Settings if needed.
+
+### Orphaned worktrees taking up disk space
+
+If Sidequest was force-quit or crashed, worktree directories may be left behind. Clean them up:
+
+```bash
+# List Sidequest worktrees
+ls ~/.sidequest/worktrees/
+
+# Remove a specific orphan
+rm -rf ~/.sidequest/worktrees/<quest-id>
+
+# Prune git references in your repo
+cd ~/your-repo && git worktree prune
+```
+
+You can also manage orphaned worktrees from Sidequest's Settings page.
+
+### Unicode characters showing as underscores in the terminal
+
+This happens when tmux does not have a UTF-8 locale. Sidequest sets `LANG=en_US.UTF-8` when creating sessions, but your system must have this locale available:
+
+```bash
+locale -a | grep UTF-8
+```
+
+### The database seems corrupted
+
+The SQLite database at `~/Library/Application Support/com.sidequest.app/sidequest.db` (macOS) can be inspected directly:
+
+```bash
+sqlite3 ~/Library/Application\ Support/com.sidequest.app/sidequest.db ".tables"
+```
+
+If the database is corrupted, quit Sidequest, rename the database file as a backup, and relaunch. Sidequest will create a fresh database with all migrations applied. Your worktrees and branches will still exist on disk but will need to be re-imported as new quests.
+
+### High CPU or memory usage
+
+Check which quest sessions are consuming resources. Each quest runs a Claude Code process inside tmux. If many quests are active simultaneously, reduce the supervisor's **active quest ceiling** or manually archive quests that are finished. The Session Stats extension panel can help identify expensive sessions.

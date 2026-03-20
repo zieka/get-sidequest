@@ -3,4 +3,91 @@ title: First Quest
 description: Run your first parallel agent session with Sidequest.
 ---
 
-> This page is under construction.
+import Mermaid from '../../../../components/Mermaid.astro';
+
+A **quest** is a single Claude Code session scoped to a task. Each quest runs in its own tmux session with an embedded terminal, so you can run multiple agents in parallel across your projects.
+
+## Quest Types
+
+When creating a quest, you choose one of three types:
+
+**Research** -- Runs Claude on your currently checked-out branch. No worktree is created. Use this for exploring code, answering questions, or investigating issues without making changes.
+
+**Changes** -- Creates an isolated [git worktree](https://git-scm.com/docs/git-worktree) branched from a base branch you select. Claude works in this worktree, so changes are fully isolated from your main working directory. Use this for bug fixes, features, or any task that modifies code.
+
+**Review** -- Checks out a pull request into a worktree and runs Claude's `/review` command. Use this to get AI-assisted code review on open PRs.
+
+## Create a Quest
+
+1. Select a project in the sidebar
+2. Click the **+** button in the quest log header, or use the keyboard shortcut
+3. In the **Create Quest** modal:
+   - Choose a **type** (Research, Changes, or Review)
+   - For **Changes**: select a base branch (defaults to your current branch). Optionally check **Start in plan mode** to have Claude propose changes before executing them
+   - For **Review**: select an open pull request from the list
+   - For **Research** or **Changes**: write a prompt describing the task
+4. Click **Create Quest**
+
+The quest is added to the **Backlog** column.
+
+### GitHub Integration
+
+If your project is a GitHub repository and the `gh` CLI is installed, the create modal offers additional options:
+
+- **Link GitHub Issues** -- Select open issues to use as the quest prompt. When you select multiple issues, you can choose to create one quest per issue or a single quest addressing all of them.
+- **Add Context Projects** -- Include other projects as read-only context so Claude can reference code across repositories.
+- **Attach Files** -- Paste images or attach files (images, PDFs, text) to include in the prompt.
+
+## Quest Lifecycle
+
+Quests move through two states:
+
+<Mermaid chart={`graph LR
+  A[Backlog] -->|Start quest| B[Active]
+  B -->|Pause| A
+  B -->|Complete| C[Removed]`} />
+
+**Backlog** -- The quest is created but not running. No tmux session exists yet. You can edit the prompt, reorder quests, or delete them from here.
+
+**Active** -- The quest is running. A tmux session has been spawned with Claude Code executing your prompt. The embedded terminal shows real-time output.
+
+### Starting a Quest
+
+- Click a backlog quest to move it to **Active** and spawn the Claude session
+- Sidequest creates a tmux session named `sq-<quest-id>`, sets the working directory (worktree for Changes, project root for Research), and launches Claude with your prompt
+- For Changes quests, a git worktree is created at `~/.sidequest/worktrees/<quest-id>` before the session starts
+
+### Working With the Terminal
+
+When you click an active quest, its embedded terminal appears in the main panel. This is a full terminal emulator (xterm.js) attached to the tmux session. You can:
+
+- Watch Claude work in real time
+- Scroll through output using the mouse
+- Type to interact with Claude directly (ask follow-up questions, approve actions, provide clarification)
+- Resize the terminal by adjusting the panel
+
+The tmux session persists even if you switch to another quest or close the app. When you come back, Sidequest reattaches to the existing session.
+
+### Completing a Quest
+
+When Claude finishes or you're done with a task:
+
+- Right-click the quest and select **Complete**, or use the context menu
+- For **Changes** quests, the git worktree is cleaned up and removed
+- The tmux session is terminated
+- The quest is removed from the board
+
+You can also move an active quest back to **Backlog** if you want to pause it. The tmux session is killed, but the worktree (if any) is preserved so you can resume later.
+
+## Running Multiple Quests
+
+The power of Sidequest is running quests in parallel. Each quest gets its own isolated tmux session and (for Changes type) its own worktree, so agents don't interfere with each other.
+
+A typical workflow:
+
+1. Create several Changes quests from GitHub issues -- one per issue
+2. Start them all -- each gets its own branch and worktree
+3. Monitor progress by clicking between active quests
+4. As quests complete, review the diffs and merge the branches
+
+Research quests share the project's working directory, so avoid running multiple Research quests that modify files on the same project simultaneously. Changes quests are fully isolated and safe to run in parallel.

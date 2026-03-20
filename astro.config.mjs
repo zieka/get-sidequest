@@ -29,7 +29,6 @@ export default defineConfig({
           label: 'Guides',
           items: [
             { label: 'Quest Types', slug: 'docs/guides/quest-types' },
-            { label: 'Supervisor', slug: 'docs/guides/supervisor' },
             { label: 'Journals', slug: 'docs/guides/journals' },
             { label: 'Handoffs', slug: 'docs/guides/handoffs' },
             { label: 'Keyboard Shortcuts', slug: 'docs/guides/keyboard-shortcuts' },
@@ -50,7 +49,6 @@ export default defineConfig({
           label: 'Reference',
           items: [
             { label: 'Shortcuts Cheat Sheet', slug: 'docs/reference/shortcuts' },
-            { label: 'Configuration', slug: 'docs/reference/configuration' },
             { label: 'FAQ', slug: 'docs/reference/faq' },
           ],
         },

@@ -3,4 +3,77 @@ title: Handoffs
 description: Transfer context between quests and continue work across sessions.
 ---
 
-> This page is under construction.
+import Mermaid from '../../../../components/Mermaid.astro';
+
+A handoff extracts the conversation history from one quest, summarizes it into a structured document, and delivers that summary to another quest -- even across different projects and workspaces. It solves the continuity problem: when a quest finishes (or hits a dead end), its context doesn't have to die with it.
+
+## How it works
+
+<Mermaid chart={`graph LR
+  A[Source Quest] -->|Read JSONL log| B[Conversation Text]
+  B -->|Summarize via Claude| C[Handoff Summary .md]
+  C -->|tmux send-keys\nor quest description| D[Target Quest]`} />
+
+1. Sidequest reads the source quest's Claude Code conversation from its JSONL log file (up to 200,000 characters).
+2. It sends the conversation to Claude with a system prompt that produces a structured summary.
+3. The summary is saved as a markdown file in `~/.sidequest/handoffs/`.
+4. If the target quest has an active session, Sidequest sends the summary file path directly into that session's terminal via tmux, so Claude picks it up immediately.
+5. If the target quest isn't running yet, the summary reference is stored in the quest's description so it's included when the session is first launched.
+
+## What gets transferred
+
+The handoff summary follows a fixed structure:
+
+- **Abstract** -- 2-3 sentences on what the quest was about and where it stands.
+- **Initial Goals** -- What the quest originally set out to accomplish.
+- **Steps Taken** -- Chronological walkthrough of key actions, decisions, and code changes with file paths and function names.
+- **Findings & Insights** -- Solutions found, patterns identified, gotchas encountered.
+- **Current State & Action Items** -- What was being worked on at the end, specific next steps with file paths and error messages, unresolved questions.
+- **Key Context** -- Environment setup, constraints, relevant paths, API endpoints, configuration values -- anything painful to rediscover.
+
+The summary emphasizes the end of the conversation. If the source quest was mid-task, the handoff captures exact file paths, line numbers, error messages, and pending decisions so the receiving quest can pick up without re-reading the original conversation.
+
+## Creating a handoff
+
+1. Right-click a quest in the quest log and select **Handoff**.
+2. Choose the target:
+   - **Existing quest** -- Search and select any active or backlog quest across all projects and workspaces.
+   - **New quest** -- Pick a project, write a prompt, and choose whether the new quest starts as active or backlog.
+3. Optionally check **Complete source quest after handoff** to archive the source quest once the handoff is delivered.
+4. Click **Send Handoff**.
+
+Sidequest shows a working indicator while Claude generates the summary. Once complete, you'll see a confirmation and the modal closes automatically.
+
+### Adding a prompt
+
+When handing off to a new quest, the prompt you write becomes the new quest's initial instruction. The handoff summary is prepended as context, so Claude in the new quest sees both the prior work and your new direction.
+
+## When to use handoffs
+
+**Continuing interrupted work.** A quest hit its context limit or you need to restart a session. Hand off to a new quest so the next session starts with full context instead of from scratch.
+
+**Splitting work.** A quest discovered that the task is bigger than expected. Hand off the remaining work to a new quest while keeping the original quest's findings intact.
+
+**Cross-project knowledge sharing.** One quest learned something (API behavior, a workaround, an architectural constraint) that a quest in a different project or workspace needs. Hand off the relevant context without manually copying and pasting -- handoffs are not limited to quests within the same project.
+
+**Shift handoffs.** You're done for the day and want to leave a clean summary of where things stand. Create a handoff to a backlog quest that you or a teammate can pick up later.
+
+## Handoff file management
+
+Handoff summaries are stored as markdown files in `~/.sidequest/handoffs/`. Filenames are slugified from the summary title (e.g., `api-auth-migration-handoff.md`). If a file with the same name already exists, a numeric suffix is appended.
+
+Each file includes frontmatter with the date and source quest title:
+
+```markdown
+---
+date: 2025-07-15
+source_quest: Fix authentication flow
+---
+
+# API Auth Migration Handoff
+
+## Abstract
+...
+```
+
+Old handoff files are automatically pruned based on a configurable retention period. You can adjust this in **Settings > Storage** by changing the handoff retention days. Set it to 0 to disable pruning entirely.
