@@ -29,8 +29,11 @@ export default defineConfig({
           label: 'Guides',
           items: [
             { label: 'Quest Types', slug: 'docs/guides/quest-types' },
+            { label: 'Recurring Quests', slug: 'docs/guides/recurring-quests' },
+            { label: 'Council', slug: 'docs/guides/council' },
             { label: 'Journals', slug: 'docs/guides/journals' },
             { label: 'Handoffs', slug: 'docs/guides/handoffs' },
+            { label: 'Usage Dashboard', slug: 'docs/guides/usage-dashboard' },
             { label: 'Keyboard Shortcuts', slug: 'docs/guides/keyboard-shortcuts' },
             { label: 'Settings', slug: 'docs/guides/settings' },
           ],
