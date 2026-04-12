@@ -9,24 +9,35 @@ description: Download and install Sidequest on macOS or Linux.
 2. Download the `.dmg` file
 3. Open the `.dmg` and drag **Sidequest** into your Applications folder
 
+### First Launch
+
 When you first open Sidequest, macOS may show a security prompt since the app is distributed outside the App Store. Right-click the app and select **Open** to bypass Gatekeeper.
 
 ## Linux
 
-### Debian / Ubuntu (.deb)
+Download the appropriate package for your distribution from the [latest release](https://github.com/zieka/get-sidequest/releases/latest):
 
-1. Go to the [latest release](https://github.com/zieka/get-sidequest/releases/latest)
-2. Download the `.deb` file
-3. Install with `sudo dpkg -i Sidequest_*.deb`
+| Format | Distribution |
+|--------|-------------|
+| `.deb` | Debian, Ubuntu, and derivatives |
+| `.rpm` | Fedora, RHEL, and derivatives |
+| `.AppImage` | Any distribution (portable, no install required) |
 
-### Fedora / RHEL (.rpm)
+### Debian / Ubuntu
 
-1. Go to the [latest release](https://github.com/zieka/get-sidequest/releases/latest)
-2. Download the `.rpm` file
-3. Install with `sudo rpm -i Sidequest-*.rpm`
+```bash
+sudo dpkg -i sidequest_*.deb
+```
 
-### Any distro (AppImage)
+### Fedora / RHEL
 
-1. Go to the [latest release](https://github.com/zieka/get-sidequest/releases/latest)
-2. Download the `.AppImage` file
-3. Make it executable and run: `chmod +x Sidequest_*.AppImage && ./Sidequest_*.AppImage`
+```bash
+sudo rpm -i sidequest_*.rpm
+```
+
+### AppImage
+
+```bash
+chmod +x Sidequest_*.AppImage
+./Sidequest_*.AppImage
+```

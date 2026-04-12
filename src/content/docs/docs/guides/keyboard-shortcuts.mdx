@@ -66,6 +66,16 @@ The command palette (**Cmd+Shift+P**) is the fastest way to do almost anything:
 3. From the results, you can also create new quests, open quests in your editor, or activate backlog quests.
 4. Type **>** at the start of your query to switch to file search mode, which fuzzy-searches files in the active quest's worktree.
 
+### Slash Commands
+
+Type **/** in the command palette to access project-level slash commands:
+
+- **/terminal \<project\>** -- Open a project in your preferred terminal.
+- **/editor \<project\>** -- Open a project in your preferred code editor.
+- **/remote \<project\>** -- Open the project's remote Git URL in your browser.
+
+Tab auto-completes the command name. Type a space after the command to filter projects by name. If exactly one project matches, the command executes automatically.
+
 ## Workflow Tips
 
 **Rapid context switching.** Use Cmd+Shift+P to jump between quests in different projects. Combined with Cmd+[ and Cmd+], you can flip between two quests you are actively working on without scrolling through the sidebar.

@@ -73,14 +73,16 @@ If you're unsure, start with **Changes** -- it's the default and the safest opti
 
 <Mermaid chart={`graph LR
   A[Backlog] -->|Activate| B[Active]
-  B -->|Complete| C[Removed]
+  B -->|Complete| C[Recently Completed]
+  C -->|Retention expires| D[Pruned]
+  C -->|Restore| B
   B -->|Pause| A`} />
 
 **Backlog** -- The quest is defined but not running. No session, no worktree yet. Click a backlog quest to edit its title or description.
 
-**Active** -- The quest has a live Claude Code session. For Changes/Review quests, the worktree and branch are created when the quest first becomes active.
+**Active** -- The quest has a live Claude Code session. For Changes/Review quests, the worktree and branch are created when the quest first becomes active. You can rename an active quest's title by clicking it inline on the quest card.
 
-When you **complete** a quest, it is removed from the board entirely. Its session is killed, worktrees are cleaned up, and the database row is deleted.
+**Recently Completed** -- When you complete a quest, it moves to the **Recently Completed** section at the bottom of the quest log. The session is killed and worktrees are cleaned up, but the quest remains visible for a retention period so you can review what was done. From here you can **restore** a quest back to active or **delete** it permanently. Completed quests are automatically pruned after the retention period expires.
 
 ### Moving quests between columns
 
