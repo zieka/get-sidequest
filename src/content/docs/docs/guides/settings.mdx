@@ -132,9 +132,15 @@ Per-project notification sounds can be configured separately from the project co
 
 **Chrome Browser Tools** -- When enabled, passes `--chrome` to the Claude CLI to enable browser automation via MCP. Disabled by default.
 
-### Gemini and Codex
+### Gemini CLI
 
-Path settings for Gemini CLI and Codex CLI are shown but currently marked as coming soon.
+**CLI Path** -- Path to the Gemini CLI executable. Sidequest auto-detects the binary and shows its status (Detected / Not Found). Set an absolute path if auto-detection fails.
+
+Gemini CLI is used by the [Council](/get-sidequest/docs/guides/council/) extension as an alternative agent for second-opinion feedback.
+
+### Codex CLI
+
+Path settings for Codex CLI are shown but currently marked as coming soon.
 
 ## Extensions
 
@@ -146,7 +152,7 @@ Built-in extensions:
 |-----------|-------------|
 | **Live Stats** | Real-time token usage and tool call statistics for the active session. |
 | **Toolkit** | Manage skills, commands, and agents for Claude Code. |
-| **Council** | Get second-opinion feedback on the current conversation from Gemini or Codex. |
+| **Council** | Get [second-opinion feedback](/get-sidequest/docs/guides/council/) on the current conversation from an alternative AI agent. |
 
 Only one extension panel can be open at a time. Opening one automatically closes any other.
 

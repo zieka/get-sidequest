@@ -34,18 +34,19 @@ The quest is added to the **Backlog** column.
 
 If your project is a GitHub repository and the `gh` CLI is installed, the create modal offers additional options:
 
-- **Link GitHub Issues** -- Select open issues to use as the quest prompt. When you select multiple issues, you can choose to create one quest per issue or a single quest addressing all of them.
+- **Link GitHub Issues** -- Select open issues to use as the quest prompt. Sidequest reads each issue's comments and linked issues to give Claude full context. When you select multiple issues, you can choose to create one quest per issue or a single quest addressing all of them.
 - **Add Context Projects** -- Include other projects as read-only context so Claude can reference code across repositories.
 - **Attach Files** -- Paste images or attach files (images, PDFs, text) to include in the prompt.
 
 ## Quest Lifecycle
 
-Quests move through two states:
+Quests move through these states:
 
 <Mermaid chart={`graph LR
   A[Backlog] -->|Start quest| B[Active]
   B -->|Pause| A
-  B -->|Complete| C[Removed]`} />
+  B -->|Complete| C[Recently Completed]
+  C -->|Restore| B`} />
 
 **Backlog** -- The quest is created but not running. No tmux session exists yet. You can edit the prompt, reorder quests, or delete them from here.
 
@@ -75,7 +76,9 @@ When Claude finishes or you're done with a task:
 - Right-click the quest and select **Complete**, or use the context menu
 - For **Changes** quests, the git worktree is cleaned up and removed
 - The tmux session is terminated
-- The quest is removed from the board
+- The quest moves to the **Recently Completed** section at the bottom of the quest log, where it remains visible for a retention period
+
+From the Recently Completed section, you can **restore** a quest back to active or **delete** it permanently. Completed quests are automatically pruned after the retention period expires.
 
 You can also move an active quest back to **Backlog** if you want to pause it. The tmux session is killed, but the worktree (if any) is preserved so you can resume later.
 

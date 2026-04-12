@@ -1,6 +1,53 @@
 ---
 title: Council
-description: Get a second opinion from an independent AI agent while working on a quest.
+description: Get a second opinion on your quest's work from an alternative AI agent.
 ---
 
-This page is under construction.
+The Council extension gives you a second opinion on any active quest's conversation. It spawns a separate AI session that reviews the current quest's work from an adversarial, red-team perspective -- challenging assumptions, identifying risks, and flagging blind spots.
+
+## How It Works
+
+1. Open the Council panel from the bottom toolbar.
+2. Select an **agent** from the dropdown: Claude Code or Gemini CLI.
+3. Click **Get Council Feedback**.
+
+Sidequest then:
+
+1. Extracts the active quest's conversation history.
+2. Summarizes it using Claude Haiku for efficiency.
+3. Saves the summary to `~/.sidequest/council/<quest-id>.md`.
+4. Spawns the selected agent with the summary and a red-team review prompt.
+
+The agent's live output streams into an embedded terminal in the Council panel.
+
+## Red-Team Stance
+
+The council agent receives instructions to act as a red-team code reviewer:
+
+- Challenge assumptions and question design decisions
+- Identify potential risks, edge cases, and blind spots
+- Push back on weak reasoning or unjustified choices
+- Acknowledge strong decisions and good trade-offs when present
+
+This adversarial framing helps surface issues that the primary agent may have overlooked.
+
+## Agent Selection
+
+The Council supports multiple AI backends through an adapter system:
+
+| Agent | Description |
+|-------|-------------|
+| **Claude Code** | Runs a separate Claude Code session. Uses `--dangerously-skip-permissions` for autonomous operation. |
+| **Gemini CLI** | Runs Google's Gemini CLI. Uses `--yolo` flag for auto-approved actions. |
+
+Select your preferred council agent in **Settings > Model Providers** or from the dropdown in the Council panel itself. Sidequest checks whether the selected CLI is installed and shows a detection status indicator.
+
+## When to Use Council
+
+Council is most useful when:
+
+- You want a sanity check before merging a complex change.
+- A quest has been running for a while and you want fresh eyes on its approach.
+- You want to compare perspectives between different AI models on the same problem.
+
+The council session is independent of the quest session -- it cannot modify the quest's files or interfere with its work. It only reads the conversation summary.

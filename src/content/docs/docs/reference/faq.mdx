@@ -65,9 +65,11 @@ If a Claude Code session crashes or becomes unresponsive:
 - **Research** quests do not create worktrees. Claude Code runs directly in the project's root directory in a read-only exploratory mode. Use these for code analysis, question-answering, and investigation tasks.
 - **Review** quests are for reviewing existing pull requests. They check out the PR branch into a worktree for examination.
 
-### What happens when I delete a quest?
+### What happens when I complete or delete a quest?
 
-Sidequest cleans up in this order:
+**Completing** a quest moves it to the **Recently Completed** section at the bottom of the quest log. The session is killed and worktrees are cleaned up, but the quest remains visible so you can review what was done. You can restore it back to active or delete it permanently. Completed quests are automatically pruned after a retention period.
+
+**Deleting** a quest cleans up in this order:
 
 1. Kills the tmux session (if running)
 2. Runs `git worktree remove --force` from the parent repository

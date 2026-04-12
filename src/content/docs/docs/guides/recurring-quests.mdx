@@ -3,4 +3,61 @@ title: Recurring Quests
 description: Schedule quests to run automatically on a repeating schedule.
 ---
 
-This page is under construction.
+Recurring quests let you define a quest template that Sidequest spawns automatically on a schedule. This is useful for repetitive tasks like daily code reviews, periodic dependency updates, or scheduled test runs.
+
+## Creating a Recurring Quest
+
+1. Right-click a project in the sidebar and select **Recurring Quests**, or open the recurring quests modal from the project menu.
+2. Click **New** to open the creation form.
+3. Fill in:
+   - **Name** -- A label for the template (e.g., "Daily dependency check").
+   - **Prompt** -- The instruction Claude receives each time the quest runs.
+   - **Quest Type** -- Research or Changes. Review quests are not available for recurring schedules.
+4. Configure a **schedule** using the visual builder (see below).
+5. Optionally add **Context Projects** for cross-repo references.
+6. Click **Save**.
+
+## Schedule Builder
+
+The schedule builder uses iCalendar RRULE format under the hood but presents a visual interface:
+
+**Frequency** -- How often the quest repeats:
+- Hourly
+- Daily (default)
+- Weekly
+- Monthly
+
+**Interval** -- "Every N \[frequency\]" (e.g., every 2 days, every 3 weeks). Range: 1--99.
+
+**Day selection** -- For weekly schedules, pick which days of the week the quest should run (Su, Mo, Tu, We, Th, Fr, Sa).
+
+**Time of day** -- When during the day the quest fires. Defaults to 9:00 AM.
+
+**End conditions:**
+- **Never** -- The quest repeats indefinitely.
+- **On date** -- Stops after a specific date.
+- **After N runs** -- Stops after a set number of occurrences.
+
+A human-readable preview (e.g., "Every weekday at 09:00") updates as you configure the schedule.
+
+## How Scheduling Works
+
+Sidequest runs a background scheduler that checks all enabled recurring quests every 60 seconds:
+
+1. When a recurring quest's next fire time has passed, a new quest is spawned from the template.
+2. Spawned quests are created with the title format: **"Quest Name -- Date Time"**.
+3. If a supervisor is enabled for the project, the quest is created in **Backlog** for the supervisor to activate. If no supervisor is running, the quest is created as **Active** and starts immediately.
+4. **Deduplication** -- If a previously spawned quest from the same template is still in backlog or active, the scheduler skips that firing to avoid duplicates.
+5. When end conditions are met (date reached or run count exhausted), the recurring quest is automatically disabled.
+
+On startup, the scheduler also performs a **catchup** pass to spawn any quests that were missed while the app was closed.
+
+## Managing Recurring Quests
+
+Open the recurring quests modal to see all templates for the current project. From here you can:
+
+- **Edit** any template's name, prompt, schedule, or quest type.
+- **Enable/disable** individual templates without deleting them.
+- **Delete** a template to remove it permanently.
+
+Spawned quests are regular quests -- they appear on the quest board and can be completed, paused, or handed off like any other quest.
