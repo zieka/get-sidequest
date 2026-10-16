@@ -10,15 +10,15 @@ A handoff extracts the conversation history from one quest, summarizes it into a
 ## How it works
 
 <Mermaid chart={`graph LR
-  A[Source Quest] -->|Read JSONL log| B[Conversation Text]
+  A[Source Quest] -->|Read conversation log| B[Last 200k characters]
   B -->|Summarize via Claude| C[Handoff Summary .md]
-  C -->|tmux send-keys\nor quest description| D[Target Quest]`} />
+  C -->|typed into the session\nor stored on the quest| D[Target Quest]`} />
 
-1. Sidequest reads the source quest's Claude Code conversation from its JSONL log file (up to 200,000 characters).
-2. It sends the conversation to Claude with a system prompt that produces a structured summary.
+1. Sidequest reads the source quest's Claude Code conversation. Long conversations are trimmed from the **start**, keeping the most recent 200,000 characters, with a marker noting how many earlier messages were dropped -- so the summary reflects where things stand now, not how they began.
+2. It sends the conversation to Claude with a prompt that produces a structured summary. The model comes from the `handoff` entry in the [router rules](/get-sidequest/docs/advanced/router-rules/) (Sonnet by default).
 3. The summary is saved as a markdown file in `~/.sidequest/handoffs/`.
-4. If the target quest has an active session, Sidequest sends the summary file path directly into that session's terminal via tmux, so Claude picks it up immediately.
-5. If the target quest isn't running yet, the summary reference is stored in the quest's description so it's included when the session is first launched.
+4. If the target quest has a live session, Sidequest types a note into that session's terminal pointing at the summary file (followed by the new quest's prompt, for new quests), so the agent reads it immediately.
+5. If the target quest isn't running yet, the summary reference is prepended to the quest's description so it is included when the session is first launched.
 
 ## What gets transferred
 
@@ -28,25 +28,25 @@ The handoff summary follows a fixed structure:
 - **Initial Goals** -- What the quest originally set out to accomplish.
 - **Steps Taken** -- Chronological walkthrough of key actions, decisions, and code changes with file paths and function names.
 - **Findings & Insights** -- Solutions found, patterns identified, gotchas encountered.
-- **Current State & Action Items** -- What was being worked on at the end, specific next steps with file paths and error messages, unresolved questions.
+- **Where things stand right now** -- What was being worked on at the end, specific next steps with file paths and error messages, unresolved questions.
 - **Key Context** -- Environment setup, constraints, relevant paths, API endpoints, configuration values -- anything painful to rediscover.
 
-The summary emphasizes the end of the conversation. If the source quest was mid-task, the handoff captures exact file paths, line numbers, error messages, and pending decisions so the receiving quest can pick up without re-reading the original conversation.
+If the source quest was mid-task, the handoff captures exact file paths, line numbers, error messages, and pending decisions so the receiving quest can pick up without re-reading the original conversation.
 
 ## Creating a handoff
 
-1. Right-click a quest in the quest log and select **Handoff**.
+1. Right-click a quest in the quest log and select **Handoff Quest**. The Courier's dialog opens.
 2. Choose the target:
-   - **Existing quest** -- Search and select any active or backlog quest across all projects and workspaces.
-   - **New quest** -- Pick a project, write a prompt, and choose whether the new quest starts as active or backlog.
-3. Optionally check **Complete source quest after handoff** to archive the source quest once the handoff is delivered.
+   - **Existing Quest** -- search and select any active or backlog quest across all projects and workspaces.
+   - **New Quest** -- pick a project and whether the new quest starts as **Active** or **Backlog**, then click **Configure Quest…**. The full Create Quest dialog opens, titled *New Quest for Handoff*, so you can set the type, base branch, prompt, GitHub issues, context projects, attachments, token budget, agent, account, supervisor, model and effort. Issues linked to the source quest start selected when the target is in the same project.
+3. Optionally check **Complete this quest after handoff** to archive the source quest once the handoff is delivered.
 4. Click **Send Handoff**.
 
-Sidequest shows a working indicator while Claude generates the summary. Once complete, you'll see a confirmation and the modal closes automatically.
+The Courier reports its progress ("Reading through the quest log", "Summarizing key moments"...) while Claude generates the summary. Once complete you'll see **The handoff scroll has been delivered!** and the dialog closes.
 
 ### Adding a prompt
 
-When handing off to a new quest, the prompt you write becomes the new quest's initial instruction. The handoff summary is prepended as context, so Claude in the new quest sees both the prior work and your new direction.
+When handing off to a new quest, the prompt you write becomes the new quest's initial instruction. The handoff summary is delivered as context, so the agent in the new quest sees both the prior work and your new direction.
 
 ## When to use handoffs
 
@@ -54,9 +54,13 @@ When handing off to a new quest, the prompt you write becomes the new quest's in
 
 **Splitting work.** A quest discovered that the task is bigger than expected. Hand off the remaining work to a new quest while keeping the original quest's findings intact.
 
-**Cross-project knowledge sharing.** One quest learned something (API behavior, a workaround, an architectural constraint) that a quest in a different project or workspace needs. Hand off the relevant context without manually copying and pasting -- handoffs are not limited to quests within the same project.
+**Switching agents or models.** Hand off to a new quest on a different agent, account or model -- the configure step lets you pick all of them.
+
+**Cross-project knowledge sharing.** One quest learned something (API behavior, a workaround, an architectural constraint) that a quest in a different project or workspace needs. Handoffs are not limited to quests within the same project.
 
 **Shift handoffs.** You're done for the day and want to leave a clean summary of where things stand. Create a handoff to a backlog quest that you or a teammate can pick up later.
+
+For durable, searchable notes rather than a one-off transfer, see [Journals](/get-sidequest/docs/guides/journals/).
 
 ## Handoff file management
 
@@ -66,7 +70,7 @@ Each file includes frontmatter with the date and source quest title:
 
 ```markdown
 ---
-date: 2025-07-15
+date: 2026-07-15
 source_quest: Fix authentication flow
 ---
 
@@ -76,4 +80,4 @@ source_quest: Fix authentication flow
 ...
 ```
 
-Old handoff files are automatically pruned based on a configurable retention period. You can adjust this in **Settings > Storage** by changing the handoff retention days. Set it to 0 to disable pruning entirely.
+Old handoff files are pruned automatically based on **Handoff Retention** in **Settings > Storage** (7, 30 or 90 days, or never; default 30 days). Cleanup runs on startup and periodically while the app is open.

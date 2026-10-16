@@ -3,7 +3,7 @@ title: Shortcuts Cheat Sheet
 description: Complete reference of all Sidequest keyboard shortcuts.
 ---
 
-Every keyboard shortcut available in Sidequest, organized by category. All shortcuts use the **Cmd** key on macOS.
+Every keyboard shortcut available in Sidequest, organized by category. All shortcuts use the **Cmd** key.
 
 Press **Cmd+/** inside the app to open the built-in shortcuts overlay.
 
@@ -31,18 +31,35 @@ Press **Cmd+/** inside the app to open the built-in shortcuts overlay.
 | Cmd+2 | Toggle Quest Log | Global |
 | Cmd+3 | Toggle Terminal panel | Global |
 | Cmd+4 | Toggle Changes panel | Global |
-| Cmd+5 | Toggle first visible extension (e.g., Live Stats) | Global |
-| Cmd+6 | Toggle second visible extension (e.g., Toolkit) | Global |
-| Cmd+7 | Toggle third visible extension (e.g., Council) | Global |
+| Cmd+5 | Toggle first visible extension (Live Stats by default) | Global |
+| Cmd+6 | Toggle second visible extension (Toolkit by default) | Global |
+| Cmd+7 | Toggle third visible extension (Council by default) | Global |
 
-Extension shortcuts (Cmd+5 and above) map to extensions in the order they appear in the bottom toolbar. Reorder extensions in **Settings > Extensions** to change the mapping.
+Extension shortcuts (Cmd+5 and above) map to extensions in the order they appear in the bottom toolbar. Reorder or hide extensions in **Settings > Extensions** (or right-click the toolbar and choose **Customize Bottom Bar...**) to change the mapping.
 
-## Terminal Font Size
+## Zoom
 
 | Shortcut | Action | Context |
 |----------|--------|---------|
-| Cmd+= | Increase terminal font size | Global |
-| Cmd+- | Decrease terminal font size | Global |
+| Cmd+= | Zoom in (whole interface, including the terminal) | Global |
+| Cmd+- | Zoom out | Global |
+
+## Changes Panel
+
+| Shortcut | Action | Context |
+|----------|--------|---------|
+| Cmd+F / Ctrl+F | Find in diff | Changes panel |
+| Enter / Shift+Enter | Next / previous match | Find bar |
+| Esc | Close find bar, or clear the file filter | Changes panel |
+
+## Terminal
+
+| Shortcut | Action | Context |
+|----------|--------|---------|
+| Cmd+C | Copy selection (passes through when nothing is selected) | Terminal |
+| Cmd+V | Paste (long pastes become a temp file path) | Terminal |
+| Ctrl+V | Literal ^V, for Claude Code image paste | Terminal |
+| Cmd+1–9, Cmd+[, Cmd+], Cmd+=, Cmd+-, Cmd+/, Cmd+,, Cmd+R, Cmd+Shift+P | Pass through to Sidequest | Terminal |
 
 ## Editing (Menu Bar)
 
@@ -73,12 +90,25 @@ These actions are available from within the command palette (Cmd+Shift+P):
 |--------|-----|
 | Search quests | Type quest name or prompt text |
 | Search files | Type **>** then a filename |
-| Jump to quest | Select from results |
-| Create quest | Choose "Create Quest" action |
-| Open in editor | Choose "Open in Editor" action |
-| Activate backlog quest | Choose "Activate" action |
-| Slash commands | Type **/** then a command: `/terminal`, `/editor`, or `/remote` |
+| Jump to quest | Select an active quest |
+| Edit quest | Select a backlog quest |
+| Open project | Select a project row |
+| Create quest | **Q** on a highlighted project |
+| Open in editor | **E** on a highlighted active quest |
+| Activate backlog quest | **A** on a highlighted backlog quest |
+| Slash commands | Type **/** then `terminal`, `editor` or `remote`; **Tab** completes |
+
+## Dialogs
+
+| Shortcut | Action | Context |
+|----------|--------|---------|
+| Enter | Create the quest | Create Quest prompt |
+| Shift+Enter | New line in the prompt | Create Quest prompt |
+| / | Autocomplete skills, commands and agents | Create Quest prompt |
+| K / X / → | Keep / Archive or Delete / Skip | Review old journals |
+| Option (hold) | Expand Open in Editor / Terminal into submenus | Context menus |
+| Space or Enter | Pick up / drop a quest with the keyboard | Supervisors board |
 
 ## Bottom Toolbar Shortcut Discovery
 
-Hold the **Cmd** key for approximately one second to reveal shortcut labels above each panel toggle button in the bottom toolbar. Release Cmd to hide them.
+Hold the **Cmd** key for approximately one second to reveal shortcut labels above each panel toggle button, the extension buttons and the Settings button in the bottom toolbar. Release Cmd to hide them.

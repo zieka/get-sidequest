@@ -1,17 +1,53 @@
 ---
 title: Toolkit
-description: Extend Sidequest with custom tools and integrations.
+description: Manage Claude Code skills, commands and agents from Sidequest, and extend Sidequest with custom panels.
 ---
 
 import Mermaid from '../../../../components/Mermaid.astro';
 
-The Toolkit is Sidequest's built-in extension for managing **skills**, **commands**, and **agents** -- the three types of customizations that Claude Code understands. It also serves as a window into the broader extension system that powers Sidequest's side panels.
+The Toolkit is Sidequest's built-in extension for managing **skills**, **commands**, and **agents** -- the three types of customizations that Claude Code understands. It also serves as a window into the extension system that powers Sidequest's side panels.
+
+## Using the Toolkit Extension
+
+Open the Toolkit panel from the bottom toolbar (**Cmd+6** by default). It provides a unified interface for managing all three types of Claude Code customizations, and the same items power the **/** autocomplete in the Create Quest prompt.
+
+### Item Types
+
+| Type | Paths scanned | Description |
+|------|---------------|-------------|
+| Skill | `~/.claude/skills/*/SKILL.md`, `~/.claude/skills/*.md`, `~/.claude/plugins/marketplaces/*/skills/*/SKILL.md`, `<project>/.claude/skills/` | Instructions Claude loads on demand |
+| Command | `~/.claude/commands/**/*.md`, `<project>/.claude/commands/` | Slash commands |
+| Agent | `~/.claude/agents/*.md`, `<project>/.claude/agents/` | Sub-agents with their own model, tools and turn limits |
+
+Items are grouped by **Type** (Skills, Commands, Agents) or by **Scope** (the current project vs. **User**). Plugin and marketplace skills appear under User, named `<plugin>:<skill>` when the skill has no name of its own. Use the search box to filter by name or description.
+
+### Creating Items
+
+1. Click **+** in the Toolkit header and choose **New Skill**, **New Command** or **New Agent**
+2. Choose the save target with the segmented toggle: **Global** (`~/.claude/...`, available in every project) or the current project's name (`<project>/.claude/...`)
+3. Fill in the name and description
+4. For agents, configure additional fields:
+   - **Model** -- Default, Opus, Sonnet or Haiku
+   - **Allowed Tools** -- quick-add Bash, Read, Write, Edit, Grep, Glob, WebSearch, WebFetch, or type any tool name
+   - **Max Turns** -- limit on agent execution turns
+5. Write the instructions in the body editor
+6. Click **Save**
+
+Files are written as markdown with frontmatter (`name`, `description`, and for agents `model`, `allowed_tools`, `max_turns`) to `<dir>/<slug>.md`.
+
+### Context Menu Actions
+
+Right-click any item to **Edit** it in the Toolkit editor, open it in your preferred editor, open its folder in the file manager, open a terminal there, or **Delete** it.
+
+### Sidequest's own skills
+
+Two skills in the list are managed by Sidequest and rewritten at every launch: **sidequest** (creating quests from an agent) and **sidequest-journal** (searching and writing journals). Editing them in the Toolkit will not stick; see [Sidequest CLI](/get-sidequest/docs/advanced/cli/).
 
 ## Extension System Architecture
 
-Sidequest has a lightweight extension system that loads panels into the right sidebar of the app. Each extension is a directory containing a `manifest.json` and a JavaScript/TypeScript entry point.
+Sidequest has a lightweight extension system that loads panels into the right-hand panel of the app. Each extension is a directory containing a `manifest.json` and a JavaScript/TypeScript entry point.
 
-Extensions are loaded from:
+Third-party extensions are loaded from:
 
 ```
 ~/.sidequest/extensions/
@@ -120,77 +156,26 @@ export default {
 }
 ```
 
+Third-party extensions get a button in the bottom toolbar with a generic icon, a **Cmd+N** shortcut after the built-in ones, and a visibility switch under **Settings > Extensions** like any other.
+
 ## Built-in Extensions
 
-Sidequest ships with three built-in extensions. They are registered by the app and always available in the sidebar toolbar.
+Sidequest ships with three built-in extensions, registered by the app and always available in the bottom toolbar. Only one is open at a time.
 
-### Session Stats (`sidequest.stats`)
+### Live Stats (`sidequest.stats`)
 
-Displays live token usage, costs, and tool timing for the active quest's Claude Code session. Uses `keepAlive: true` so it maintains state across panel toggles. Subscribes to `session.statsUpdated` events and re-renders automatically.
+Displays live token usage (input, output, cache read), an estimated cost, the quest's **Token budget** progress when one is set, and Tools / Skills timing tables for the active quest's Claude Code session. Uses `keepAlive: true` so it maintains state across panel toggles.
 
 Capabilities: `session:read`, `quest:read`
 
 ### Toolkit (`sidequest.toolkit`)
 
-The skill, command, and agent manager described below. Lets you create, edit, search, and delete Claude Code customizations from within Sidequest.
+The skill, command, and agent manager described above.
 
 Capabilities: `skills:read`, `skills:write`, `quest:read`, `workspace:read`, `shell:open`
 
 ### Council (`sidequest.council`)
 
-Spawns a separate Claude Code session to review the current quest's work and provide feedback from an alternative perspective. Supports switching between model providers (Gemini, Codex). The council session runs in its own terminal and can see the quest's working directory.
+Briefs a separate agent session on the current quest's work and asks for an adversarial review. See [Council](/get-sidequest/docs/guides/council/).
 
-Capabilities: `process:spawn` (restricted to `claude`), `quest:read`
-
-## Using the Toolkit Extension
-
-Open the Toolkit panel from the right sidebar (wrench icon). It provides a unified interface for managing all three types of Claude Code customizations.
-
-### Item Types
-
-| Type | Claude Code path | Description |
-|------|-----------------|-------------|
-| Skill | `~/.claude/skills/*.md` | Persistent instructions loaded into Claude's context |
-| Command | `~/.claude/commands/*.md` | Slash commands invocable via `/user:command-name` |
-| Agent | `~/.claude/agents/*.md` | Sub-agents with their own model, tools, and turn limits |
-
-### Creating Items
-
-1. Click the **+** button in the Toolkit header
-2. Choose **Skill**, **Command**, or **Agent**
-3. Fill in the name and description
-4. For skills, choose the save target:
-   - **Global** -- saved to `~/.claude/skills/` (available in all projects)
-   - **Project** -- saved to `<project-path>/.claude/skills/` (project-specific)
-5. For agents, configure additional fields:
-   - **Model** -- opus, sonnet, or haiku (or default)
-   - **Allowed Tools** -- which tools the agent can use (Bash, Read, Write, etc.)
-   - **Max Turns** -- limit on agent execution turns
-6. Write the instructions in the body editor
-7. Click **Save**
-
-### Local Files
-
-Check the **Local** checkbox to save with a `.local.md` extension. Local files are typically gitignored and stay on your machine -- useful for machine-specific paths, credentials references, or personal workflow preferences.
-
-### Searching and Grouping
-
-The Toolkit scans these directories for items:
-
-- `~/.claude/skills/`
-- `~/.claude/commands/`
-- `~/.claude/agents/`
-- `~/.claude/plugins/marketplaces/`
-- `<project-path>/.claude/skills/` (when a project is selected)
-
-Use the search bar to filter by name or description. Toggle between **Type** grouping (skills, commands, agents) and **Scope** grouping (project vs. user) using the buttons next to the search bar.
-
-### Context Menu Actions
-
-Right-click any item to:
-
-- Edit in the Toolkit editor
-- Open in your preferred code editor
-- Open the containing folder in Finder
-- Open a terminal at the item's directory
-- Delete the item
+Capabilities: `process:spawn` (restricted to the agent binaries), `quest:read`

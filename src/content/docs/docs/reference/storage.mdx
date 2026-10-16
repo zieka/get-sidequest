@@ -1,0 +1,64 @@
+---
+title: Data and Storage
+description: Where Sidequest keeps its database, worktrees, journals, handoffs, profiles and other files, and what cleans them up.
+---
+
+Everything Sidequest stores lives on your machine. There are no accounts and nothing is uploaded. Agents talk to their own providers; Sidequest itself only reaches out to GitHub (through `gh`), to its release feed for updates, and to a public pricing file for the cost estimator.
+
+## The database
+
+Quests, projects, workspaces, supervisors, recurring quests, settings and profiles live in a SQLite database:
+
+| Platform | Path |
+|----------|------|
+| macOS | `~/Library/Application Support/com.sidequest.app/sidequest.db` |
+| Linux | `~/.config/com.sidequest.app/sidequest.db` |
+
+Supervisors read and write this database directly with `sqlite3`, so keep that tool installed if you use them.
+
+## `~/.sidequest/`
+
+| Path | Contents | Cleaned up by |
+|------|----------|---------------|
+| `worktrees/<quest-id>/` | Git worktree of each Worktree or Review quest | Quest Retention (Settings > Storage); **Worktree Storage** reclaim |
+| `multirepo/<quest-id>/<repo>/` | Per-child worktrees of multi-repo quests | same |
+| `attachments/<quest-id>/` | Files attached to a quest's prompt | Deleted with the quest |
+| `quest-context/<quest-id>.json` | The context block injected at session start | Deleted with the quest |
+| `journal/<project>/` | Journal entries (`archive/` holds retired ones) | Journal Retention |
+| `journal-index.db` | Full-text search index over journals (disposable) | `sidequest-journal reindex` rebuilds it |
+| `handoffs/` | Handoff summaries | Handoff Retention |
+| `council/<quest-id>.md` | Council briefings | Removed when the council session is cleaned up |
+| `profiles/<name>/` | One Claude Code config directory per profile | Deleting the profile |
+| `bin/` | `sidequest` and `sidequest-journal` CLIs | Refreshed every launch |
+| `skills/sidequest-supervisor.md` | Supervisor system prompt | Rewritten every launch |
+| `supervisor-state/<supervisor-id>/notes.md` | A supervisor's own notes: what it handled and learned | You |
+| `router-rules.md` | Your edited routing rules (absent until you save edits) | **Reset to default** |
+| `extensions/` | Third-party extensions | You |
+| `sounds/` | Imported notification sounds | Settings > Notifications |
+| `hooks/on-claude-stop.sh` | The Claude Code Stop hook script | Settings > Notifications > Disable |
+| `logs/` | Rolling app logs (50 KB files, last 30 kept) | Automatic |
+| `sidequest.sock` | Local socket the CLI and hooks use to reach the app | Automatic |
+
+Sidequest also writes two Claude Code skills to `~/.claude/skills/sidequest/` and `~/.claude/skills/sidequest-journal/`, and the Stop hook entry to `~/.claude/settings.json` when notifications are enabled.
+
+## tmux sessions
+
+Every session Sidequest creates is named with an `sq-` prefix: `sq-<quest-id>`, `sq-supervisor-<supervisor-id>`, `sq-council-<quest-id>` and `sq-profile-login-<profile-id>`. They outlive the app; **Settings > Storage > Orphaned Tmux Sessions** lists any that no longer belong to a quest or supervisor. See [Tmux Configuration](/get-sidequest/docs/advanced/tmux/).
+
+## What runs on a schedule
+
+| Job | When |
+|-----|------|
+| Recurring quest scheduler | Every 60 seconds, plus a catch-up pass at launch |
+| Journal sweep (Chronicler) and journal retention | At launch, then every 5 minutes |
+| Completed-quest pruning | Every 5 minutes |
+| Handoff pruning | At launch and every 6 hours, at most once a day |
+| Supervisor watcher (auto-start, auto-stop, queue pulling) | Every 5 seconds while the window is visible; queue pulls every 30 seconds |
+| GitHub badge refresh | Every 60 seconds |
+| Update check | At launch |
+
+## Backing up and moving machines
+
+- **Export Settings** (bottom of the Settings sidebar) captures preferences but not quests.
+- Copy the database file and `~/.sidequest/journal/` to keep quests, supervisors and journals. Worktrees are ordinary git worktrees; their branches are already in your repositories.
+- Profiles contain credentials; treat `~/.sidequest/profiles/` like `~/.claude`.

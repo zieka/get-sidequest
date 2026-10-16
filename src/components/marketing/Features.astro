@@ -11,17 +11,17 @@ import FeatureCard from './FeatureCard.astro';
     <div class="divide-y divide-white/5">
       <FeatureCard
         headline="Run a team of agents, not just one"
-        description="Kanban-style board to manage multiple Claude Code sessions simultaneously. Drag quests between backlog and active. Each quest runs in its own isolated git worktree — no merge conflicts, no stepping on toes."
-        screenshotLabel="Quest Board"
-        screenshotDescription="Quest board showing Backlog and Active columns, 3-4 quest cards with status indicators, one mid-drag"
+        description="A quest log for every project. Drag quests between backlog and active, and run as many as your machine can hold. Each Worktree quest gets its own isolated git worktree — no merge conflicts, no stepping on toes."
+        screenshotLabel="Quest Log"
+        screenshotDescription="Quest log showing Active and Backlog sections with status, GitHub badges and diff stats on each card"
         screenshotImage="screenshots/quest-board.png"
       />
 
       <FeatureCard
         headline="Supervision on autopilot"
-        description="A dedicated agent monitors your active quests, auto-answers routine prompts, activates backlog items when slots open, and escalates only what needs your attention."
-        screenshotLabel="Supervisor"
-        screenshotDescription="Supervisor panel showing auto-approved actions and an escalation notification"
+        description="Hand quests from any repo to a supervisor: an agent that answers routine prompts, pulls the next quest from its queue when a slot opens, closes finished work against your criteria, and escalates only what needs you. Supervisors can even report to each other."
+        screenshotLabel="Supervisors"
+        screenshotDescription="Supervisors board with an unassigned pool and two supervisor queues"
         screenshotImage="screenshots/supervisor.png"
         reverse
         icon="sprites/supervisor.png"
@@ -29,27 +29,44 @@ import FeatureCard from './FeatureCard.astro';
 
       <FeatureCard
         headline="Every discovery, documented"
-        description="Make a discovery worth noting? Journal entries automatically summarize your quests and give you options to store them anywhere — an Obsidian vault, a Notion doc, or even committed back to the repo if you think others would benefit."
+        description="When a quest finishes, the Chronicler writes a journal entry: what was learned, what was decided, and why. Search every entry from one place, commit the good ones to your repo — and new quests read the relevant ones before they start, so your agents stop rediscovering the same things."
         screenshotLabel="Journals"
-        screenshotDescription="Journal view showing a markdown document with quest summary, key decisions section"
+        screenshotDescription="Search all journals modal with recent entries and a rendered entry preview"
         screenshotImage="screenshots/journals.png"
         icon="sprites/chronicler.png"
       />
 
       <FeatureCard
-        headline="Full Claude Code, zero context switching"
-        description="Embedded terminal with the complete Claude Code experience. Powered by tmux under the hood — use native tmux controls if that's your thing, or let Sidequest's smart controls handle it for you. Switch between active quests instantly, all in one window."
+        headline="The real CLI, zero context switching"
+        description="An embedded terminal running the actual agent — not a chat wrapper. tmux keeps every session alive across restarts; Sidequest's chill mode gives you scroll, click and drag without learning tmux. Switch between quests instantly, all in one window."
         screenshotLabel="Terminal"
-        screenshotDescription="Terminal panel with active Claude Code session, quest tabs visible above"
+        screenshotDescription="Terminal panel with a Claude Code session and the Sidequest quest context header"
         screenshotImage="screenshots/terminal.png"
         reverse
       />
 
       <FeatureCard
+        headline="See everything that's running"
+        description="One timeline of every active quest across all your projects: how long each has been running, and which ones have gone quiet and need a nudge."
+        screenshotLabel="Active Quests"
+        screenshotDescription="Active quests timeline across projects with age and staleness markers"
+        screenshotImage="screenshots/active-quests.png"
+      />
+
+      <FeatureCard
+        headline="Any agent, any model"
+        description="Run each quest on Claude Code, Gemini CLI, Codex CLI, Copilot CLI or OpenCode. Pick a model and effort per quest, or let the smart router read the task and choose. Keep separate Claude accounts side by side with profiles."
+        screenshotLabel="Create Quest"
+        screenshotDescription="Create Quest dialog with type, base branch, prompt, token budget and agent fields"
+        screenshotImage="screenshots/create-quest.png"
+        reverse
+      />
+
+      <FeatureCard
         headline="Know what you're spending"
-        description="Token usage tracking, cost estimates, and performance metrics across all your projects and quests."
+        description="Token usage, tool and skill timing, and cost estimates across every project and account — with per-quest token budgets when you want a hard stop."
         screenshotLabel="Usage Dashboard"
-        screenshotDescription="Usage dashboard showing token charts, cost breakdown, project leaderboard"
+        screenshotDescription="Usage dashboard showing token breakdown and a per-project table"
         screenshotImage="screenshots/usage-dashboard.png"
       />
     </div>

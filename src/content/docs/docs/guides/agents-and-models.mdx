@@ -1,0 +1,113 @@
+---
+title: Agents and Models
+description: Run quests on Claude Code, Gemini CLI, Codex CLI, Copilot CLI or OpenCode; choose models and effort; let the smart router decide; keep several Claude accounts with profiles.
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+
+Sidequest runs whichever coding-agent CLIs you have installed. Claude Code is the default and the most deeply integrated; the others run quests through the same embedded terminal.
+
+## Supported agents
+
+| Agent | Binary | Permission flags Sidequest passes | Plan mode | Model flag |
+|-------|--------|-----------------------------------|-----------|------------|
+| **Claude Code** | `claude` | `--permission-mode auto` (default) or `--dangerously-skip-permissions` | `--permission-mode plan` | `--model` |
+| **Gemini CLI** | `gemini` | `--yolo` | `--approval-mode plan` | `-m` |
+| **Codex CLI** | `codex` | `--full-auto` | `--sandbox read-only --ask-for-approval untrusted` | none (model picker unavailable) |
+| **Copilot CLI** | `copilot` | `--allow-all` | `--plan` | `--model` |
+| **OpenCode** | `opencode` | none | none | `-m` |
+
+Every agent runs inside tmux via your login shell, so tools installed with nvm, mise and the like are found. Sidequest auto-accepts the "trust this folder" prompts Claude Code and Copilot show on first launch in a directory.
+
+### What only works with Claude Code
+
+Several features read Claude Code's transcripts or rely on its hooks, so they apply to Claude Code quests only:
+
+- The **smart router**, **effort levels** and **Claude account profiles**
+- **Auto Mode**, **Bypass Permissions in Home** and **Chrome Browser Tools** settings
+- **Needs attention** status and notifications (via the Claude Code Stop hook)
+- **Automatic journals** and the "quest context" block injected at session start (other agents get the same context as plain prompt text, plus a hint about the `sidequest-journal` command)
+- **Resume** of an existing conversation after a restart; other agents start fresh
+- **Token statistics** in Live Stats and the Usage Dashboard
+
+Supervisors, Council summaries, journals, handoffs and the router all use the `claude` binary themselves, so keep Claude Code installed even if your quests run on another agent.
+
+## Choosing the agent
+
+- **Default**: Settings > Agent > **Default Agent** ("The AI coding agent to use for new quests. Can be overridden per-quest.")
+- **Per quest**: the **Agent** select in the Create Quest dialog. The agent cannot be changed after the quest is created.
+- **CLI paths**: each agent has a **CLI Path** field in Settings > Agent with a **Detected** / **Not found** indicator. Leave it blank to auto-detect.
+
+## Permission modes (Claude Code)
+
+| Setting | Effect |
+|---------|--------|
+| **Auto Mode** on (default) | `--permission-mode auto`: Claude Code's classifier approves routine actions and escalates risky ones |
+| **Auto Mode** off | `--dangerously-skip-permissions`: nothing is checked |
+| **Bypass Permissions in Home** | Only shown when Auto Mode is on. Home quests get `--dangerously-skip-permissions` because the classifier escalates constantly outside a repo |
+| **Start in plan mode** (per quest) | `--permission-mode plan` |
+
+Supervisors always run with `--dangerously-skip-permissions`.
+
+## Models and effort
+
+Open the collapsible **Model & effort** section in the Create Quest, Edit Quest or Recurring Quest dialog.
+
+**Model** is a searchable combobox. It groups **Recently used** models (the last five per agent), **Presets**, and for OpenCode a **Discovered** list fetched from `opencode models`. You can also type any model id; Sidequest passes it through as-is and warns that it is not a known preset.
+
+| Agent | Presets |
+|-------|---------|
+| Claude Code | Fable, Opus, Sonnet, Haiku |
+| Copilot CLI | GPT-5.4, Claude Sonnet 4.6, Claude Sonnet 5 |
+| Gemini CLI, OpenCode | none -- type a model id (OpenCode lists discovered models) |
+| Codex CLI | model selection is not available yet |
+
+**Auto** is the default. For Claude Code with smart routing on it reads **Auto (smart router)**; otherwise **Auto (agent default)**, which simply omits the model flag.
+
+**Effort** applies to Claude Code only and is passed as `--effort`:
+
+- The global default is **Settings > Agent > Effort Level** (Low, Medium, High, Extra High, Max). The default is **Extra High**.
+- The per-quest **Effort** select offers Auto (settings default), Low, Medium, High, XHigh, Max.
+- Precedence: quest override > router decision > global setting.
+
+### Changing a quest's model or effort later
+
+Open **Edit** on the quest and change the values. Effort applies the next time the session starts (including **Restart Session**). A new model applies only to a fresh session: a resumed Claude Code conversation keeps the model it started with.
+
+## Smart model router
+
+With smart routing on (the default), a Claude Code quest whose model is **Auto** is routed before its first session starts. Sidequest runs a quick, non-interactive `claude --print` call with the quest's type, plan-mode flag, title and description, and the [routing rules](/get-sidequest/docs/advanced/router-rules/) as the system prompt. It returns a model (`opus` or `sonnet`) and an effort level, and the quest launches with both. The quest card shows **Routing model...** during this step.
+
+<Mermaid chart={`graph LR
+  A[Quest: title + prompt] --> B[Router: claude --print, Sonnet]
+  B -->|JSON model + effort| C[Launch quest session]
+  B -->|timeout or error| D[Fallback model, medium effort]
+  D --> C`} />
+
+- The router itself always runs on Sonnet at low effort, so routing costs very little.
+- If routing fails or takes more than 20 seconds, the quest launches on the **Fallback model** (Settings > Routing; Haiku, Sonnet or Opus, default Sonnet) at medium effort.
+- Picking a model manually bypasses the router entirely and uses the global effort setting unless the quest overrides it.
+- Routing happens only when a new session is created, not when a quest resumes.
+- Supervisors and recurring quests never route; their **Auto** means the agent default.
+
+The same rules file also decides which model Sidequest's own background jobs use -- handoff summaries, journal entries, Council briefings and project analysis. See [Smart Router Rules](/get-sidequest/docs/advanced/router-rules/) to read or edit the rules.
+
+Turn routing off with **Settings > Routing > Enable smart routing**. Quests then launch with no model flag, i.e. your Claude Code default.
+
+## Claude account profiles
+
+A **profile** is a separate Claude Code configuration directory (`CLAUDE_CONFIG_DIR`) under `~/.sidequest/profiles/<name>/`. Each profile holds its own credentials, settings and conversation history, so you can run some quests on a work account and others on a personal one. Skills, plugins, commands, agents and `CLAUDE.md` are shared with your main `~/.claude` by symlink.
+
+### Adding a profile
+
+1. Open **Settings > Agent > Claude Profiles**
+2. Type a name in **Profile name** and click **Add profile**
+3. A **Log in** dialog opens with an embedded terminal running `claude auth login` for that directory. Finish the login flow there and click **Done**
+
+Each profile row shows the signed-in email and plan (or **Not signed in**) with **Log in** / **Switch account**, **Refresh** and **Delete** buttons. Deleting a profile removes its directory, including that account's conversation history; quests using it fall back to the default account.
+
+### Using profiles
+
+- **Per quest**: once at least one profile exists, the Create Quest dialog shows a **Claude account** select with **Default account** (your ambient `~/.claude`) and each profile. The account is fixed once the quest has been activated, because its conversation lives in that directory.
+- **Per project**: Project Settings > **Default Claude account** sets the account new quests in that project start on. Recurring quests use it too.
+- The terminal header shows the profile name while a quest runs on one, and the Usage Dashboard includes every profile's transcripts.

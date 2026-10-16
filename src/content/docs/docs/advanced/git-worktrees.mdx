@@ -5,27 +5,27 @@ description: How Sidequest uses git worktrees to isolate parallel quest branches
 
 import Mermaid from '../../../../components/Mermaid.astro';
 
-Sidequest uses **git worktrees** to let you run multiple Claude Code sessions against the same repository in parallel -- each on its own branch, with its own working directory, without any stashing or switching.
+Sidequest uses **git worktrees** to let you run multiple agent sessions against the same repository in parallel -- each on its own branch, with its own working directory, without any stashing or switching.
 
 ## What Are Git Worktrees?
 
-A git worktree is a linked copy of your repository that shares the same `.git` object store but has its own working tree and checked-out branch. Unlike cloning, worktrees share history, refs, and objects with the original repo. This means they are created instantly and use almost no extra disk space.
+A git worktree is a linked copy of your repository that shares the same `.git` object store but has its own working tree and checked-out branch. Unlike cloning, worktrees share history, refs, and objects with the original repo. This means they are created instantly and use almost no extra disk space for history -- only the checked-out files.
 
 ```
 # Standard git: one repo, one branch at a time
 ~/my-project (main)
 
 # With worktrees: one repo, multiple branches simultaneously
-~/my-project (main)                          # your original repo
-~/.sidequest/worktrees/<quest-id> (feat/auth) # worktree for quest A
-~/.sidequest/worktrees/<quest-id> (fix/bug)   # worktree for quest B
+~/my-project (main)                                    # your original repo
+~/.sidequest/worktrees/<quest-id> (feat/orders-rate-limit)  # worktree for quest A
+~/.sidequest/worktrees/<quest-id> (fix/checkout-flake)      # worktree for quest B
 ```
 
 ## Why Sidequest Uses Worktrees
 
 Without worktrees, running parallel branches requires either cloning the repo multiple times (slow, wastes disk) or constantly stashing and switching branches (error-prone, blocks other work). Worktrees solve both problems:
 
-- **True isolation.** Each quest gets its own directory. Claude Code sessions cannot interfere with each other.
+- **True isolation.** Each quest gets its own directory. Agent sessions cannot interfere with each other.
 - **No stashing.** Your main branch stays untouched. Uncommitted work in one quest does not affect another.
 - **Shared git history.** All worktrees share the same object database. Fetches and commits in one are visible from another.
 - **Fast creation.** Creating a worktree takes milliseconds since it only needs to check out files, not copy the entire repo.
@@ -37,108 +37,52 @@ All worktrees live under a centralized directory in your home folder:
 ```
 ~/.sidequest/
   worktrees/
-    <quest-id>/          # One directory per Changes quest
-      .git               # File (not directory) pointing to parent repo
-      src/               # Full working tree for this branch
-      ...
+    4df63f83-4094-4d16-9517-3d514b405e5b/   # Worktree or Review quest
+    7a2c9e10-....../
   multirepo/
-    <quest-id>/          # Multi-repo quests group child worktrees
-      frontend/          # Worktree for frontend repo
-      backend/           # Worktree for backend repo
-      ...
+    9b1d.../                                # multi-repo quest
+      frontend/                             # one worktree per child repo
+      backend/
 ```
 
-Each quest is identified by a UUID. The worktree path is deterministic: `~/.sidequest/worktrees/<quest-id>`. This makes cleanup reliable -- Sidequest can always find and remove a quest's worktree by ID.
+The quest id is the directory name, so Sidequest can map a working directory back to its quest -- this is how the Claude Code Stop hook knows which quest needs attention.
 
-## Branch Naming
-
-When you create a **Changes** quest, Sidequest generates a branch name using Claude. The prompt and quest title are sent to Claude Code, which returns a conventional branch name like `feat/add-user-auth` or `fix/login-validation`.
-
-The branch name is sanitized to be a valid git ref:
-
-- Lowercased, whitespace replaced with hyphens
-- Only alphanumeric characters, hyphens, dots, and slashes are kept
-- Consecutive dots/hyphens collapsed, trailing dots and `.lock` removed
-- Truncated to 60 characters
-
-If Claude is unavailable, Sidequest falls back to a random three-word name from the system dictionary (e.g., `maple-frost-ocean`).
-
-A temporary branch `quest/<first-8-chars-of-id>` is created immediately so the worktree can be set up without waiting for the Claude API call. Once the real branch name is generated, the branch is renamed in place.
-
-## Worktree Lifecycle
-
-### Creation
-
-When a Changes quest is activated:
+## Lifecycle of a Worktree quest
 
 <Mermaid chart={`graph TD
-  A[Quest activated] --> B[Compute worktree path]
-  B --> C{Directory exists?}
-  C -->|Yes| I[Reuse existing worktree]
-  C -->|No| D{Branch exists?}
-  D -->|Yes, has unique commits| E[Create worktree from branch]
-  D -->|Yes, stale| F[Delete branch, recreate from base]
-  D -->|No| G[Create new branch from base]
-  E --> H[Configure upstream tracking]
-  F --> H
-  G --> H
-  I --> H`} />
+  A[Activate quest] --> B["git worktree add -b quest/&lt;id8&gt; ~/.sidequest/worktrees/&lt;id&gt; &lt;base&gt;"]
+  B --> C[Set upstream to base branch]
+  C --> D{Setup command?}
+  D -->|yes| E[Run it in the worktree]
+  D -->|no| F
+  E --> F[Launch agent session]
+  F --> G[Rename branch to agent-suggested name]
+  H[Complete quest] --> I[Interrupt agent, keep worktree]
+  I -->|retention expires| J["git worktree remove"]`} />
 
-1. Sidequest computes the worktree path: `~/.sidequest/worktrees/<quest-id>`
-2. If the directory already exists, it is reused as-is
-3. If the branch already exists with unique commits, the worktree is created from that branch
-4. If the branch exists but has no unique work (stale), it is deleted and recreated from the base branch
-5. Otherwise, a new branch is created from the base branch (or `HEAD` if no base is specified)
-6. Upstream tracking is configured so `gh pr create` targets the correct base branch
+1. **Branch creation.** The worktree is created from the base branch you chose, on a temporary branch named `quest/` plus the first eight characters of the quest id.
+2. **Upstream.** Sidequest sets `branch.<name>.remote` and `branch.<name>.merge` to the base branch so `gh pr create` and `git push` target the right place.
+3. **Setup command.** If the project defines one, it runs in the new worktree through your login shell before the agent starts (only when the worktree is newly created).
+4. **Naming.** In the background, Sidequest asks Claude for a branch name derived from your prompt (for example `feat/orders-rate-limit`) and renames the branch. If no usable name comes back, the temporary name stays.
+5. **Completion.** Completing the quest interrupts the agent and keeps the worktree for the **Quest Retention** window so the quest can be restored. When retention expires -- or immediately, if retention is disabled -- the worktree is removed with `git worktree remove --force`, falling back to deleting the directory and `git worktree prune`. The branch is never deleted by Sidequest.
 
-```
-git worktree add -b feat/my-feature ~/.sidequest/worktrees/<quest-id> main
-```
+### Review quests
 
-### During Development
+Review quests fetch the pull request's head branch (`git fetch origin +head:head`) and add a worktree on it. If that branch is already checked out in another worktree -- for example your own -- git would refuse, so Sidequest fetches into `refs/remotes/origin/<head>` instead and adds the worktree **detached** at that commit. Your checkout is never touched.
 
-Claude Code runs inside the worktree directory. All file changes, commits, and git operations happen within this isolated working tree. You can view diffs, stage files, and create pull requests from Sidequest's UI.
+### Multi-repo quests
 
-The worktree shares refs with the parent repo, so remote branches fetched in one worktree are available in all of them.
+For legacy multi-repo projects, Sidequest creates one worktree per child repository under `~/.sidequest/multirepo/<quest-id>/`, all on the same branch name, and runs the agent in the parent directory. See [Multi-Project Workflows](/get-sidequest/docs/advanced/multi-project/).
 
-### Cleanup
+## Diff stats and the Changes panel
 
-When a quest is deleted, Sidequest cleans up in this order:
+Each quest card shows `+added −removed` for its branch relative to the base branch, refreshed in batches for all active quests. The [Changes panel](/get-sidequest/docs/guides/changes-panel/) reads the worktree directly, so uncommitted edits appear immediately.
 
-1. Kills the tmux session (if running) and waits for it to fully terminate
-2. Runs `git worktree remove --force` from the parent repo
-3. Falls back to deleting the directory directly if the git command fails
-4. Prunes stale worktree references with `git worktree prune`
+## Disk usage
 
-## Finishing a Changes Quest
+Worktrees contain a full checkout plus whatever the agent builds there (`node_modules`, `target`, ...), so they can be large. **Settings > Storage > Worktree Storage** shows the total, lists worktrees that are orphaned or belong to completed quests, and reclaims them. Reclaiming a completed quest's worktree keeps its branch and commits.
 
-When a Changes quest is complete and you want to merge the work back:
-
-- **Create a PR.** Use the built-in PR creation flow or Claude to push the branch and open a pull request against the base branch.
-- **Squash merge.** Sidequest supports squash merging the quest branch back into the target branch. This collapses all commits from the quest into a single commit on the target, keeping your main branch history clean.
-
-Under the hood, a squash merge runs:
-```
-git checkout main
-git merge --squash feat/my-feature
-git commit -m "Squashed merge of feat/my-feature"
-```
-
-After merging, delete the quest from Sidequest to clean up the worktree and branch.
-
-## Research Quests
-
-Research quests do **not** create worktrees or branches. They run Claude Code directly in the project's root directory. This is appropriate for read-only exploration, code analysis, and question-answering tasks that do not need branch isolation.
-
-## Troubleshooting
-
-### "Branch is already checked out"
-
-Git prevents two worktrees from having the same branch checked out. If you see this error, another worktree (or your main repo) already has that branch active. Delete the conflicting quest or switch the main repo to a different branch.
-
-### Orphaned worktrees
-
-If Sidequest is force-quit, worktree directories may be left behind. You can view and clean up orphaned worktrees from Settings, or remove them manually:
+If Sidequest was force-quit and a directory is left behind without a quest, it appears there as **Orphaned**. From the shell:
 
 ```bash
 ls ~/.sidequest/worktrees/
@@ -146,6 +90,14 @@ rm -rf ~/.sidequest/worktrees/<quest-id>
 cd ~/your-repo && git worktree prune
 ```
 
-### Worktree shares refs with parent
+## Working with quest branches yourself
 
-Because worktrees share the git object store, `git fetch` in one location updates refs everywhere. This is a feature, not a bug -- it means your quest worktrees always have access to the latest remote state.
+Everything Sidequest does is ordinary git:
+
+```bash
+git worktree list                 # shows every quest worktree and its branch
+git branch -a                     # quest branches appear here
+git log main..feat/orders-rate-limit
+```
+
+You can push a quest branch, open a PR, rebase it, or merge it from any tool. Sidequest does not merge or delete branches on its own; ask the agent to run `gh pr create`, or do it yourself.

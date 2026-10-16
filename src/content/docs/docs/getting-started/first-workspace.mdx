@@ -1,19 +1,21 @@
 ---
 title: First Workspace
-description: Create your first workspace and project in Sidequest.
+description: Create your first workspace and add projects from disk or a git URL.
 ---
 
 Sidequest organizes your work into **workspaces** and **projects**. The sidebar on the left is your navigation hub -- workspaces are collapsible groups, and projects are the repositories within them.
 
 ## Concepts
 
-**Workspace** -- A named group for organizing related projects. Think of it as a folder or team label. Examples: "Backend Services", "Client Work", "Personal".
+**Workspace** -- A named group for organizing related projects. Think of it as a folder or team label. Examples: "Backend Services", "Client Work", "Personal". Workspaces are purely organizational and do not correspond to a directory on disk.
 
 **Project** -- A directory on disk, typically a git repository. Projects live inside workspaces and are where you create quests. Sidequest supports three project types:
 
-- **Git Repo** -- A single git repository (has a `.git` directory)
-- **Multi Repo** -- A parent directory containing multiple git repos as immediate children
-- **Directory** -- A non-git directory (allowed when you explicitly opt in)
+- **Git Repo** -- A single git repository (has a `.git` directory). Enables the full feature set: worktree isolation, branch selection, diff stats, GitHub integration.
+- **Directory** -- A non-git directory. Only Current Branch quests can run here.
+- **Multi Repo** -- A legacy type for a parent directory holding several git repos. New additions of such a folder now add each child repo as its own project instead (see below).
+
+**Home** -- A built-in project that points at your home directory. It sits above the workspace tree and is handy for quests that are not about any one repo ("which of my repos still pin Node 18?"). See [Quest Types](/get-sidequest/docs/guides/quest-types/#home-quests).
 
 ## Create a Workspace
 
@@ -21,43 +23,76 @@ Sidequest organizes your work into **workspaces** and **projects**. The sidebar 
 2. Type a name (e.g., "My Projects") and press **Enter**
 3. The workspace appears in the sidebar, ready for projects
 
-Workspaces are purely organizational. They don't correspond to any directory on disk.
+Sidequest ships with one workspace named **Default**. It is an ordinary workspace: rename or delete it as you like.
 
 ## Add a Project
 
-1. Click the **+** icon next to your workspace name, or right-click the workspace and select **Add Project**
-2. A file picker opens -- navigate to your project directory and select it
+1. Hover a workspace header and click its **⋮** menu, then **Add Project**
+2. In the **Add Project** dialog pick a tab:
+   - **From disk** -- click **Choose Folder…** and select a directory
+   - **Clone** -- paste a repository URL or `owner/repo` shorthand, choose a parent folder with **Choose**, and click **Clone**. GitHub URLs and shorthand are cloned with `gh repo clone`, so private repos work once `gh auth login` has run; other hosts use `git clone`. The clone lands in `<parent>/<repo-name>` and the parent folder is remembered for next time.
 3. Sidequest scans the directory:
-   - If it contains a `.git` folder, it's added as a **Git Repo**
-   - If it contains child directories with `.git` folders, it's detected as a **Multi Repo**
-   - If it's neither, you'll be prompted to either run `git init` or add it as a plain directory
+   - If it contains a `.git` folder, it is added as a **Git Repo**
+   - If it contains child directories with `.git` folders, the **Add Git Repositories** picker lists them; select the ones you want and click **Add N Projects** to add each as a separate project
+   - If it is neither, choose **Initialize git repo and add project** (runs `git init`) or **Add as non-git project**
 
-The project appears under its workspace in the sidebar, using the directory name as its display name.
+The project appears under its workspace using the directory name as its display name. Adding a path that is already a project is refused with a message naming the workspace it lives in.
 
 ## Sidebar Structure
 
-The sidebar displays your workspace tree:
-
 ```
-Workspaces
-  Backend Services        <-- workspace
-    api-server            <-- project (git repo)
-    auth-service          <-- project (git repo)
-  Frontend                <-- workspace
-    web-app               <-- project (git repo)
+Workspaces                      <-- filters: active-only, starred-only
+  Search projects               <-- type to filter, Enter selects the top hit
+  Home                          <-- built-in home-directory project
+  Acme                          <-- workspace (project count)
+    api-gateway  ★   main  ▶5   <-- project: star, branch, active-quest count
+    web-dashboard    main  ▶2
+  Personal
+    dotfiles         main
+  + Add Workspace
 ```
 
 - Click a **workspace** name to expand or collapse it
-- Click a **project** to select it and view its quest board
-- Drag projects to reorder them within a workspace or move them between workspaces
-- Right-click a workspace or project for additional options (rename, delete, move)
+- Click a **project** to select it and open its quest log
+- Each project row shows its current branch, a green ▶ count of active quests, and -- on hover -- icons for the languages and frameworks Sidequest detected. A project whose quest needs your attention shimmers.
+- Drag projects to reorder them within a workspace or move them to another workspace; drag workspace headers to reorder workspaces
+- Hover a workspace header for its **⋮** menu: **Add Project**, **Rename**, **Delete** (deleting removes its projects and quests)
+
+### Finding projects quickly
+
+- **Search projects** -- type to filter by name across all workspaces. Enter selects the top match; Esc clears.
+- **Star** a project from its right-click menu. Starred projects show an amber star and can be shown on their own with the star button in the sidebar header.
+- The **filter** button in the header shows only projects with active quests. Both filters combine.
+
+### Project menu
+
+Right-click a project for: **Star**/**Unstar**, **Copy Working Directory**, **Open in Editor**, **Open in Finder**, **Open in Terminal**, **Analyze Project**, and for git repos **Open Remote**, **Checkout Branch...**, **Pull...**, **Review Pull Request...**, **Issues...**, **Git Log...**, **Git Status...**, then **Rename...** and **Project Settings...**. Hold **Option** while the menu is open to pick a specific editor or terminal.
+
+**Remove Project...** lives in the project's hover **…** menu. It asks you to type the project name and warns how many running sessions will be terminated.
+
+**Rename** also renames the folder on disk (and the project's journal folder). It is refused while any of the project's quests still has a worktree or a live session.
+
+## Project Settings
+
+Right-click a project and choose **Project Settings...** to set per-project behaviour:
+
+| Setting | What it does |
+|---------|--------------|
+| **Notification Sound** | Overrides the global sound for this project's quests |
+| **Default Claude account** | New quests in this project start on this [profile](/get-sidequest/docs/guides/agents-and-models/#claude-account-profiles) |
+| **Attach projects to new quests** | Context projects every new quest starts with (editable per quest) |
+| **Default supervisor** | New quests in this project start with this [supervisor](/get-sidequest/docs/guides/supervisors/) (editable per quest). Changing it never moves existing quests |
+| **Setup Command** | Runs in a freshly created worktree before the agent starts, e.g. `cp ~/myapp/.env.local .env.local`. Runs via your login shell; a failure is reported in a toast and the quest continues |
+| **Review Template** | The prompt used by Review quests. `{pr_number}` is replaced with the PR number. Default: `/review {pr_number}` |
+
+The journal directory is set from the Journals section of the quest log instead (see [Journals](/get-sidequest/docs/guides/journals/)).
 
 ## What Happens When You Select a Project
 
-Selecting a project opens its **quest log** in the main panel. The quest log is where you create, manage, and run quests for that project. Each project has its own independent set of quests organized into Backlog and Active sections.
+Selecting a project opens its **quest log** in the main panel. The quest log is where you create, manage, and run quests for that project. Each project has its own independent set of quests organized into Active and Backlog sections, plus Recently Completed and Journal Entries at the bottom.
 
 ## Tips
 
 - You can add the same directory as a project in multiple workspaces if needed.
-- Multi-repo projects are useful for monorepo-adjacent setups where a parent directory holds several related repos. Sidequest will detect and list the child repos automatically.
-- Projects with a valid git repository enable the full feature set: worktree-based isolation for Changes quests, branch selection, diff stats, and GitHub integration.
+- Expanding a different workspace deselects the active quest, which is a quick way to get back to the project map.
+- Projects with a valid git repository enable the full feature set: worktree-based isolation, branch selection, diff stats and GitHub integration.

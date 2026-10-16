@@ -5,92 +5,112 @@ description: Run your first parallel agent session with Sidequest.
 
 import Mermaid from '../../../../components/Mermaid.astro';
 
-A **quest** is a single Claude Code session scoped to a task. Each quest runs in its own tmux session with an embedded terminal, so you can run multiple agents in parallel across your projects.
+A **quest** is one agent session scoped to a task. Each quest runs in its own tmux session with an embedded terminal, so you can run many agents in parallel across your projects.
 
 ## Quest Types
 
 When creating a quest, you choose one of three types:
 
-**Research** -- Runs Claude on your currently checked-out branch. No worktree is created. Use this for exploring code, answering questions, or investigating issues without making changes.
+**Worktree** -- Creates an isolated [git worktree](https://git-scm.com/docs/git-worktree) branched from a base branch you select. The agent works there, fully isolated from your checkout and from other quests. Use this for bug fixes, features, or any task that modifies code. This is the default for git repositories.
 
-**Changes** -- Creates an isolated [git worktree](https://git-scm.com/docs/git-worktree) branched from a base branch you select. Claude works in this worktree, so changes are fully isolated from your main working directory. Use this for bug fixes, features, or any task that modifies code.
+**Current Branch** -- Runs the agent in the project's checked-out branch with no worktree. Use this for exploring code, answering questions, or investigating issues.
 
-**Review** -- Checks out a pull request into a worktree and runs Claude's `/review` command. Use this to get AI-assisted code review on open PRs.
+**Review** -- Checks out a pull request into a worktree and sends the agent your review prompt (by default `/review <number>`). Use this to get AI-assisted code review on open PRs.
+
+See [Quest Types](/get-sidequest/docs/guides/quest-types/) for the full comparison.
 
 ## Create a Quest
 
 1. Select a project in the sidebar
-2. Click the **+** button in the quest log header, or use the keyboard shortcut
-3. In the **Create Quest** modal:
-   - Choose a **type** (Research, Changes, or Review)
-   - For **Changes**: select a base branch (defaults to your current branch). Optionally check **Start in plan mode** to have Claude propose changes before executing them
-   - For **Review**: select an open pull request from the list
-   - For **Research** or **Changes**: write a prompt describing the task
+2. Click the **+** next to **Active** to start the quest immediately, or the **+** next to **Backlog** to queue it
+3. In the **Create Quest** dialog:
+   - Choose a **Type**
+   - For **Worktree**: pick a **Base Branch** (defaults to your current branch). Optionally check **Start in plan mode** so the agent proposes changes before executing them
+   - For **Review**: select an open pull request and, if you like, edit the **Review Prompt**
+   - Write a **Prompt** describing the task. Press **Enter** to create, **Shift+Enter** for a new line
 4. Click **Create Quest**
 
-The quest is added to the **Backlog** column.
+The dialog has more options when you need them:
 
-### GitHub Integration
-
-If your project is a GitHub repository and the `gh` CLI is installed, the create modal offers additional options:
-
-- **Link GitHub Issues** -- Select open issues to use as the quest prompt. Sidequest reads each issue's comments and linked issues to give Claude full context. When you select multiple issues, you can choose to create one quest per issue or a single quest addressing all of them.
-- **Add Context Projects** -- Include other projects as read-only context so Claude can reference code across repositories.
-- **Attach Files** -- Paste images or attach files (images, PDFs, text) to include in the prompt.
+- **GitHub Issues** -- pick open issues to use as the prompt. With several selected, choose **One quest per issue** or **One quest for all selected issues**.
+- **Add other projects for context** -- list other projects (or any directory via **Browse directory...**) the agent should read for context.
+- **Attach** -- attach images, PDFs, text, Markdown or JSON files. Pasting an image into the prompt attaches it too.
+- **/** in the prompt -- autocompletes your Claude Code skills, commands and agents. Enter inserts `/name` (or `@name` for agents).
+- **Token budget** -- stop the quest at the next turn boundary once it has used this many tokens.
+- **Agent** -- Claude Code, Gemini CLI, Codex CLI, Copilot CLI or OpenCode.
+- **Claude account** -- shown once you have added a [profile](/get-sidequest/docs/guides/agents-and-models/#claude-account-profiles).
+- **Supervisor** -- preset to the project's default supervisor, if one is set; hand the quest to a [supervisor](/get-sidequest/docs/guides/supervisors/) that answers its prompts and pulls it from the queue.
+- **Model & effort** -- override the smart router's choice. See [Agents and Models](/get-sidequest/docs/guides/agents-and-models/).
 
 ## Quest Lifecycle
 
-Quests move through these states:
-
 <Mermaid chart={`graph LR
   A[Backlog] -->|Start quest| B[Active]
-  B -->|Pause| A
+  B -->|Move to backlog| A
   B -->|Complete| C[Recently Completed]
-  C -->|Restore| B`} />
+  C -->|Restore| B
+  C -->|Retention expires| D[Pruned]`} />
 
-**Backlog** -- The quest is created but not running. No tmux session exists yet. You can edit the prompt, reorder quests, or delete them from here.
+**Backlog** -- The quest is defined but not running. No session, no worktree yet. Click a backlog quest to edit it, drag it to reorder, or right-click for more.
 
-**Active** -- The quest is running. A tmux session has been spawned with Claude Code executing your prompt. The embedded terminal shows real-time output.
+**Active** -- The quest has a live session. For Worktree and Review quests the worktree and branch are created when the quest first starts.
 
 ### Starting a Quest
 
-- Click a backlog quest to move it to **Active** and spawn the Claude session
-- Sidequest creates a tmux session named `sq-<quest-id>`, sets the working directory (worktree for Changes, project root for Research), and launches Claude with your prompt
-- For Changes quests, a git worktree is created at `~/.sidequest/worktrees/<quest-id>` before the session starts
+- Click **Move to Active** in a backlog quest's menu, or drag it onto the Active section
+- Sidequest creates a tmux session named `sq-<quest-id>`, sets the working directory (worktree, or project root for Current Branch), and launches the agent with your prompt
+- While it starts, the card shows the phase: **Creating worktree...**, **Running setup command...** (if the project has one) and **Routing model...** (if the smart router is on)
+- A Worktree quest begins on a temporary branch named `quest/<id>` and is renamed in the background to a branch name the agent derives from your prompt
+
+### Reading the cards
+
+Each card shows the title, then one status line prefixed with how long the quest has been active:
+
+| Status | Meaning |
+|--------|---------|
+| **Working** (green, pulsing) | The agent's process is busy right now |
+| **Idle** | The session is alive but quiet |
+| **Needs attention** (orange) | The agent stopped and is waiting for you (requires the Claude Code hook from Settings > Notifications) |
+| **Ready to close** | The quest's pull request has been merged |
+| **Stale** | No activity for a long while |
+
+On the right you may see a robot (supervised -- click it to open the supervisor board), a clock (spawned by a recurring quest), the type glyph (branch for Current Branch, eye for Review), GitHub issue and PR badges, and `+added −removed` line counts for Worktree quests. Hover a card to read its full prompt; double-click the title to rename it.
 
 ### Working With the Terminal
 
-When you click an active quest, its embedded terminal appears in the main panel. This is a full terminal emulator (xterm.js) attached to the tmux session. You can:
+Click an active quest to show its terminal in the main panel. This is a real terminal emulator attached to the tmux session, so you can:
 
-- Watch Claude work in real time
-- Scroll through output using the mouse
-- Type to interact with Claude directly (ask follow-up questions, approve actions, provide clarification)
-- Resize the terminal by adjusting the panel
+- Watch the agent work in real time
+- Scroll with the mouse (Sidequest's default "chill" tmux mode handles this for you)
+- Type to interact: answer questions, approve actions, give new instructions
+- Click file paths to open them in your editor (Markdown files open in a preview), and URLs to open them in the browser
+- Drag files onto the terminal to paste their paths
 
-The tmux session persists even if you switch to another quest or close the app. When you come back, Sidequest reattaches to the existing session.
+The header above the terminal shows the workspace, project and quest, the branch with a copy button, and -- if the session died -- a **Restart Session** button.
+
+The tmux session persists if you switch to another quest or close the app. When you come back, Sidequest reattaches to the existing session.
+
+### The quest menu
+
+Right-click a card (or click its **⋯** button) for: **Copy Quest Prompt**, **Open in Editor**, **Open in File Manager**, **Open in Terminal**, **Git Log...**, **Open Remote**, **Move to Active** / **Move to Backlog**, **Add to Supervisor**, **Make Journal Entry**, **Skip Auto-Journal**, **Handoff Quest**, **Restart Session** and **Complete Quest**.
 
 ### Completing a Quest
 
-When Claude finishes or you're done with a task:
+When the agent finishes or you're done with a task, choose **Complete Quest**. Sidequest interrupts the agent, ends the session and moves the quest to **Recently Completed** at the bottom of the quest log. The worktree and branch are kept for the **Quest Retention** window (Settings > Storage, default 2 hours) so you can **Restore** the quest; after that they are cleaned up. The [Chronicler](/get-sidequest/docs/guides/journals/) writes a journal entry for completed Claude Code quests within a few minutes.
 
-- Right-click the quest and select **Complete**, or use the context menu
-- For **Changes** quests, the git worktree is cleaned up and removed
-- The tmux session is terminated
-- The quest moves to the **Recently Completed** section at the bottom of the quest log, where it remains visible for a retention period
+If you set Quest Retention to **Disabled**, completing a quest deletes it, its worktree and its branch immediately, and the confirmation cannot be skipped.
 
-From the Recently Completed section, you can **restore** a quest back to active or **delete** it permanently. Completed quests are automatically pruned after the retention period expires.
-
-You can also move an active quest back to **Backlog** if you want to pause it. The tmux session is killed, but the worktree (if any) is preserved so you can resume later.
+You can also move an active quest back to **Backlog**. The session is killed, but the worktree (if any) is preserved so you can resume later.
 
 ## Running Multiple Quests
 
-The power of Sidequest is running quests in parallel. Each quest gets its own isolated tmux session and (for Changes type) its own worktree, so agents don't interfere with each other.
+The power of Sidequest is running quests in parallel. Each quest gets its own tmux session and (for Worktree and Review quests) its own worktree, so agents don't interfere with each other.
 
 A typical workflow:
 
-1. Create several Changes quests from GitHub issues -- one per issue
-2. Start them all -- each gets its own branch and worktree
-3. Monitor progress by clicking between active quests
-4. As quests complete, review the diffs and merge the branches
+1. Right-click a project and choose **Issues...**, then click **Start quest** on a few issues -- each becomes an active Worktree quest with its own branch
+2. Hand the rest of the backlog to a [supervisor](/get-sidequest/docs/guides/supervisors/) so it pulls the next one as slots free up
+3. Check the **Active quests** timeline in the bottom bar to see what is running across all projects and what has gone quiet
+4. As quests finish, review the diffs in the [Changes panel](/get-sidequest/docs/guides/changes-panel/) and let the agent open PRs with `gh pr create`
 
-Research quests share the project's working directory, so avoid running multiple Research quests that modify files on the same project simultaneously. Changes quests are fully isolated and safe to run in parallel.
+Current Branch quests share the project's working directory, so avoid running several that modify files on the same project at once. Worktree quests are fully isolated and safe to run in parallel.

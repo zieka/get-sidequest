@@ -1,0 +1,79 @@
+---
+title: Smart Router Rules
+description: How the smart model router decides, the default rules, and how to edit them.
+---
+
+The [smart router](/get-sidequest/docs/guides/agents-and-models/#smart-model-router) decides which Claude model and effort a quest launches with. Its judgement comes from a plain-text rules file that you can read and edit in **Settings > Routing > Edit routing rules**.
+
+## How a decision is made
+
+Before a Claude Code quest's first session starts (and only when its model is **Auto** and routing is on), Sidequest runs:
+
+```
+claude --print --safe-mode --model sonnet --effort low --system-prompt "<Quest routing section>"
+```
+
+and feeds it the quest's type, whether plan mode is on, its title, and its description (truncated to 2,000 characters). The router must answer with JSON such as `{"model":"opus","effort":"xhigh","reason":"..."}`. Valid models are `opus` and `sonnet`; valid efforts are `low`, `high`, `xhigh` and `max`. The quest then launches with `--model` and `--effort` set accordingly.
+
+If the call fails, returns something invalid, or takes longer than 20 seconds, the quest launches on the **Fallback model** (Settings > Routing) at medium effort.
+
+## The default rules
+
+Only the **Quest routing** section is sent to the router. In order, first match wins:
+
+| Rule | Result |
+|------|--------|
+| 1. Plan or design mode | `opus` / `max` |
+| 2. Stakes marked critical | `opus` / `xhigh` |
+| 3. Debugging or root-cause work | `opus` / `xhigh` (`max` if the cause is deeply buried) |
+| 4. Passes the depth test | `opus` / `xhigh` |
+| 5. Otherwise | `sonnet` -- `low` for trivial or well-scoped small work, `high` for everything else |
+
+**The depth test** is the only judgement call. The router picks `opus` only if one of these holds:
+
+- Multiple defensible designs exist and picking wrong is expensive to undo.
+- The work changes an interface, schema or contract others depend on.
+- The work decides *what* to build, not just how to write it.
+- Understanding it requires holding two or more systems in mind at once.
+
+File count is not evidence of depth: a 30-file mechanical rename is `sonnet/low`; a one-file change to an auth boundary is `opus/xhigh`. When the test is a coin flip the router chooses `opus`, because nothing re-runs a wrong call.
+
+**Scope** affects effort, never model -- broad scope lifts `sonnet/low` to `sonnet/high` and stops there.
+
+**Read-only questions** default to `sonnet/high`, or `opus/xhigh` if the question feeds an irreversible decision, asks "how should we…", or spans many systems.
+
+## Internal chores
+
+The rules file ends with a block that is not sent to the router. It names the model Sidequest's own background jobs use:
+
+```
+commit-message = haiku
+handoff        = sonnet
+journal        = haiku
+council        = opus
+git-analyze    = haiku
+```
+
+- `handoff` -- summarising a conversation for a [handoff](/get-sidequest/docs/guides/handoffs/)
+- `journal` -- the Chronicler writing [journal entries](/get-sidequest/docs/guides/journals/)
+- `council` -- writing the briefing for a [Council](/get-sidequest/docs/guides/council/) review
+- `git-analyze` -- detecting a project's languages and frameworks for the sidebar icons
+
+Only the aliases `opus`, `sonnet` and `haiku` are valid here; anything else falls back to `haiku`.
+
+## Editing the rules
+
+1. Open **Settings > Routing** and click **Edit routing rules**.
+2. Change the text. Keep the `## Quest routing` heading and the ` ```internal ` block; everything else is yours. The router is a language model reading prose, so write rules the way you would brief a colleague.
+3. Click **Save**. Your version is written to `~/.sidequest/router-rules.md` and used from the next quest on.
+
+**Reset to default** deletes your file and restores the bundled rules. An empty or missing file also means the defaults.
+
+### Ideas
+
+- **Bias toward Sonnet** for a cost-conscious period: change rule 5's `high` to `low` for anything under a few files, or add "Treat refactors as sonnet unless they touch public APIs."
+- **Route by project.** Mention project names in the rules: "Quests in `billing` always get `opus/xhigh`."
+- **Cheaper chores.** Set `council = sonnet` if briefings are costing more than the reviews are worth.
+- **Keywords.** Rules 1--3 are keyword matches on the prompt, so you can add your own triggers: "A title starting with `spike:` routes `sonnet/low`."
+
+Changes to the rules never affect quests that already have a session; a quest's model is fixed when its first session starts.

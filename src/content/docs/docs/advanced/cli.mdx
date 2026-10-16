@@ -1,0 +1,138 @@
+---
+title: Sidequest CLI
+description: The sidequest and sidequest-journal command-line tools that agents (and you) can use to create quests and search journals.
+---
+
+Sidequest installs two command-line tools into `~/.sidequest/bin/` at every launch and prepends that directory to `PATH` inside every quest session. Agents use them through the skills Sidequest writes to `~/.claude/skills/`; you can use them from any terminal.
+
+| Command | Needs the app running? | What it does |
+|---------|------------------------|--------------|
+| `sidequest` | Yes -- talks to the app over `~/.sidequest/sidequest.sock` | List projects and quests, create quests |
+| `sidequest-journal` | No -- reads the journal files and index directly | Search and write journal entries |
+
+Add `~/.sidequest/bin` to your own `PATH` to call them by name outside a quest.
+
+## `sidequest`
+
+`sidequest` is the app binary itself, symlinked into `~/.sidequest/bin`. Every command accepts `--json` for machine-readable output. Exit codes: `0` success, `1` the app refused the request, `2` usage error, `3` the app is not running.
+
+### `sidequest project list`
+
+Lists every project with its name, type, path, workspace and id.
+
+### `sidequest quest list`
+
+```
+sidequest quest list [-p PROJECT] [-s open|backlog|active|archived]
+                     [-t research|changes|review] [--pr N] [--limit N]
+```
+
+Defaults to `open` (backlog and active) across all projects, up to 200 rows. `-t` uses the internal type names: `changes` is a Worktree quest, `research` a Current Branch quest.
+
+### `sidequest quest create`
+
+```
+sidequest quest create [-p PROJECT] [-t research|changes|review]
+                       [--title TITLE] [-d TEXT | --description-file PATH|-]
+                       [--pr N] [--active] [--base-branch BRANCH] [--plan]
+                       [--model MODEL] [--effort LEVEL]
+                       [--supervisor ID|NAME | --no-supervisor] [--context PROJECT|/dir ...]
+```
+
+| Option | Notes |
+|--------|-------|
+| `-p`, `--project` | Id, path or name. Defaults to the project containing the current directory |
+| `-t`, `--type` | Default `research`. Directory projects such as Home only run `research` |
+| `--title` | Defaults to the description's first line, or `Review: PR #N` |
+| `-d`, `--description-file` | Required for `research` and `changes`; `-` reads stdin. A `review` quest without one uses the project's review template |
+| `--pr` | Required for `review` |
+| `--active` | Start now instead of queuing in the backlog. Ignored when `--supervisor` is given, because the supervisor pulls it |
+| `--base-branch`, `--plan` | `changes` quests only |
+| `--model`, `--effort` | Overrides, as in the Create Quest dialog |
+| `--supervisor` | Hand the quest to a supervisor by id or name. Defaults to the project's default supervisor, in which case the output says so |
+| `--no-supervisor` | Create the quest unsupervised even if the project has a default supervisor |
+| `--context` | Repeatable. Other projects or directories to read; not for `review` |
+
+The output names the quest and its id:
+
+```
+Created review quest "Review: PR #123 - Fix login race" in my-repo (backlog).
+id: 7c9e...
+```
+
+Created quests appear on the board immediately and, if active, launch their session.
+
+### How agents use it
+
+The `sidequest` skill (`~/.claude/skills/sidequest/SKILL.md`) tells Claude Code to:
+
+- create quests in the **backlog** unless told the work should start now, since `--active` costs a session and a worktree;
+- run `sidequest quest list` first and skip anything already open for the same PR or task, so a recurring quest does not pile up duplicates;
+- create one quest per unit of work, only for work it was asked to hand off -- never fan out on its own;
+- report what it created and what it skipped.
+
+A typical use is a recurring triage quest that reviews the day's pull requests and spins off a Review quest for each one it flags:
+
+```bash
+sidequest quest list --project my-repo --type review
+sidequest quest create --project my-repo --type review --pr 123 \
+    --title "Review: PR #123 - Fix login race" \
+    --description-file - <<'EOF'
+/review 123
+
+Triage rated this red: it changes the auth flow and adds no tests.
+EOF
+```
+
+## `sidequest-journal`
+
+A standalone binary that reads Sidequest's database read-only and the journal files on disk, so it works whether or not the app is open.
+
+```
+sidequest-journal search --terms a,b [--projects x,y | --all-projects]
+                         [--source auto|manual|agent] [--limit N] [--json]
+sidequest-journal write --title "..." --summary "..." [--tags a,b] [--project name] < body.md
+sidequest-journal roots [--project name]
+sidequest-journal reindex
+```
+
+Exit codes: `0` results, `1` no results (normal), `2` usage error, `3` index or I/O error.
+
+### `search`
+
+Terms are OR-matched by prefix and ranked with title and tag hits first; at most two hits per quest. The project is inferred from the working directory -- a `~/.sidequest/worktrees/<id>` path maps to its quest's project, any other path to the longest registered project path containing it. Use `--projects` or `--all-projects` for cross-repo questions. Each text hit prints the date, project, title and tags, then the summary and the file path on indented lines; `--json` prints one object per line. The default limit is 10.
+
+```bash
+sidequest-journal search --terms hydration,ssr
+sidequest-journal search --terms patch,download --all-projects --json --limit 5
+```
+
+### `write`
+
+Reads a markdown body from stdin and writes an entry with `source: agent` into the project's journal directory, printing its path. When run inside a quest worktree the entry records the quest id.
+
+```bash
+cat <<'EOF' | sidequest-journal write \
+  --title "Patch download auth header is added by the CLI" \
+  --tags patch-download,auth \
+  --summary "The UI never sends Authorization; the CLI injects it when serving bytes."
+## What I expected
+...
+## What is actually true
+...
+## How I confirmed it
+...
+EOF
+```
+
+### `roots` and `reindex`
+
+`roots` lists the directories searched for a project: its journal directory plus any folders you have committed entries into. `reindex` rebuilds `~/.sidequest/journal-index.db` from the files; do this if search results look stale.
+
+### How agents use it
+
+The `sidequest-journal` skill tells Claude Code to search before any deep investigation, to treat entries as leads and check their dates against the code, and to **write** only when it learned something hard to find that a reader could not get from the code: a non-obvious cause, a trap, a decision and its reason -- not routine changes. See [Journals](/get-sidequest/docs/guides/journals/).
+
+## Startup context
+
+Besides the CLIs, each Claude Code quest receives a **quest context** block at the start of its session, delivered through a `SessionStart` hook so it is re-injected after `/clear` and `/compact`. It lists up to three journal entries matched to the quest title, the context projects to read, and any attached files. The block is written to `~/.sidequest/quest-context/<quest-id>.json` and shown in gray above the prompt in the terminal. Other agents receive the same text as a prefix to their prompt.

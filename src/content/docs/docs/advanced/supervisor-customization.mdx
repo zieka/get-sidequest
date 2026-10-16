@@ -1,67 +1,78 @@
 ---
 title: Supervisor Customization
-description: Customize Supervisor behavior with custom prompts and review strategies.
+description: How a supervisor's prompt is built, what it can do, and how to shape it with close criteria and extended prompts.
 ---
 
 import Mermaid from '../../../../components/Mermaid.astro';
 
-The Supervisor is a dedicated Claude Code session that monitors and manages quests within a project. It runs as a long-lived tmux session (`sq-supervisor-<project-id>`) and operates with `--dangerously-skip-permissions` so it can act autonomously.
+This page covers the mechanics behind [Supervisors](/get-sidequest/docs/guides/supervisors/): the session that runs, the prompt it receives, and the two free-text rules you can use to change its behaviour.
 
-Each project has its own independent supervisor configuration. All settings are persisted in the database and can be changed from the project header in the Sidequest UI.
+## The supervisor session
 
-## Configuration Panel
+Starting a supervisor runs, inside a tmux session named `sq-supervisor-<supervisor-id>` with `~/.sidequest` as the working directory:
 
-Expand the Supervisor section by clicking the robot icon in a project's header. The toggle switch starts or stops the supervisor. When stopped, you can modify all configuration options. Settings are locked while the supervisor is running -- stop it first to make changes.
+```
+claude [--model <model>] [--chrome] --resume <supervisor-id> --dangerously-skip-permissions \
+  --system-prompt "$(cat ~/.sidequest/skills/sidequest-supervisor.md)" '<prompt>' \
+|| claude ... --session-id <supervisor-id> ... '<prompt>'
+```
 
-## Configuration Options
+- `--resume <supervisor-id>` continues the supervisor's own conversation. On the first run there is none, so the command falls through to `--session-id <supervisor-id>`, which creates it. The prompt is sent either way, so edited rules reach a resumed session.
+- `--model` is the supervisor's **Model** rule; **Auto** omits the flag.
+- `--chrome` is added when Chrome Browser Tools is enabled in Settings.
+- `--dangerously-skip-permissions` is always set: the supervisor must run `sqlite3` and `tmux` commands without approval.
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| **Enabled** | `false` | Whether the supervisor is active for this project |
-| **Auto-answer active quests** | `true` | Automatically respond to Claude Code permission prompts in active quest sessions |
-| **Pull backlog to active** | `true` | Automatically activate backlog quests when active quest count drops below the ceiling |
-| **Active quest ceiling** | `3` | Maximum number of simultaneously active quests (1--10) |
-| **Close completed quests** | `false` | Automatically archive quests when they meet your completion criteria |
-| **Close quest prompt** | (empty) | Describes when a quest should be considered complete |
-| **Extended prompt** | (empty) | Additional instructions appended to the supervisor's system prompt |
-| **Extended prompt enabled** | `false` | Whether the extended prompt is active |
+Stopping sends `/exit` to the session, waits half a second, then kills the tmux session.
 
-## Auto-Answer Behavior
+## How the prompt is built
 
-When **auto-answer** is enabled, the supervisor monitors active quest sessions and responds to Claude Code's tool-use permission prompts. This keeps quests moving without requiring you to manually approve every file write or command execution.
+<Mermaid chart={`graph TD
+  A[System prompt\n~/.sidequest/skills/sidequest-supervisor.md] --> E[Session]
+  B[Capabilities line\nauto_answer, pull_backlog, ceiling, close_quest] --> E
+  C[Close Quest Conditions] -->|if enabled and non-empty| E
+  D[Extended Instructions] -->|if enabled and non-empty| E`} />
 
-The supervisor detects when a quest session is waiting for input and provides the appropriate response to continue execution. This is particularly useful for long-running tasks where Claude needs to perform many file operations.
+The first message sent to Claude is:
 
-To use auto-answer, the quest sessions themselves must be running with appropriate permissions. The supervisor observes the tmux sessions and interacts with them when it detects they need attention.
-
-## Backlog Management
-
-The backlog system automates quest scheduling. When enabled:
-
-1. The supervisor tracks how many quests have `status = 'active'` for the project
-2. When an active quest finishes (is archived or deleted) and the count drops below the **active quest ceiling**, the supervisor promotes the next backlog quest
-3. Backlog quests are activated in `sort_order` -- drag quests in the backlog column to set priority
-4. The newly activated quest gets a worktree created and a Claude Code session spawned automatically
-
-This creates a pipeline: queue work in the backlog, and the supervisor feeds it into active slots as capacity opens up.
-
-### Active Quest Ceiling
-
-The ceiling controls parallelism. Set it based on your machine's resources and your Anthropic API rate limits:
-
-- **1** -- Serial execution. One quest at a time, fully sequential.
-- **3** (default) -- Moderate parallelism. Good for most machines.
-- **5--10** -- High parallelism. Useful if you have many independent tasks and sufficient API quota.
-
-The ceiling is enforced at the point of promotion. If you manually activate quests beyond the ceiling, the supervisor will not demote them -- it only stops promoting new ones.
+```
+You are supervising the quest group '{name}' (supervisor_id: {id}).
+Enabled capabilities: auto_answer: true, pull_backlog: true, ceiling: 3, close_quest: true.
 
 ## Close Quest Conditions
 
-When **close completed quests** is enabled, the supervisor can automatically archive quests that meet criteria you define in the close quest prompt. This closes the loop on the automation pipeline: backlog quests are activated, worked on, and archived without manual intervention.
+You are authorized to close (archive) quests when they meet the user's
+completion criteria. The user defines "done" as:
 
-Write the close quest prompt to describe your definition of "done." The supervisor evaluates quests against these criteria and archives those that qualify.
+{close quest prompt}
 
-### Example Close Quest Prompts
+When a quest meets these conditions, archive it using the instructions in
+your system prompt.
+
+## Extended Instructions
+
+{extended prompt}
+
+Begin your supervision loop.
+```
+
+The two optional sections appear only when their switch is on and the text is non-empty. Because the prompt is assembled at start, these rules are locked while the supervisor runs -- stop it, edit, start again. **Reports to**, **Auto-start** and the name can change at any time.
+
+## What the system prompt teaches
+
+The bundled system prompt (about 300 lines) tells the supervisor:
+
+- **Its scope.** It supervises one quest group, identified by `supervisor_id`, and must never touch quests outside it. Child supervisors' quests may be counted but not read, answered or closed.
+- **Its tools.** The `sqlite3` CLI against Sidequest's database for reading quests and updating `needs_attention` or `status`, and `tmux capture-pane` / `tmux send-keys -l` against `sq-<quest-id>` sessions for reading and answering.
+- **The auto-answer workflow.** Read each active quest's pane; when the agent is waiting, pick the recommended option, confirm routine actions, make small design decisions, then wait ~10 seconds and handle any follow-up prompt before moving on.
+- **Escalation rules.** Leave `needs_attention` set and log the reason for destructive git operations, merges to the main branch, worktree deletion, anything involving secrets, external side effects, or notable cost.
+- **The main loop.** Sleep 30 seconds between passes and print a status table (`| Quest | Summary | Last Action |`) each time.
+- **Close quest capability** and **extended instructions**, which come from your rules.
+
+The file is rewritten from the bundled copy on every launch, so edit the **Extended prompt** instead of the file.
+
+## Close quest conditions
+
+With **Close completed quests** on, the supervisor archives quests that meet your criteria. Write the criteria the way you would tell a colleague when a task is done.
 
 **PR-based workflow:**
 ```
@@ -77,98 +88,67 @@ git status is clean (no uncommitted changes). The commit messages
 should be descriptive.
 ```
 
-**Research quests:**
+**Current Branch quests:**
 ```
 When the research question has been answered with a summary written
 to a markdown file in the project's docs/ directory.
 ```
 
-## Extended Prompt
+Archiving through the supervisor behaves like **Complete Quest**: the worktree stays for the retention window and the Chronicler writes a journal entry.
 
-The extended prompt lets you inject additional instructions into the supervisor's system prompt. Use it to customize behavior beyond what the built-in options cover.
+## Extended prompt
 
-The extended prompt is appended as an "Extended Instructions" section in the supervisor's initial message. It can reference the supervisor's capabilities and override or supplement its default behavior.
-
-### Example Extended Prompts
+The extended prompt is appended as an **Extended Instructions** section. Use it to add behaviour the built-in options do not cover, or to tune how the supervisor answers.
 
 **Code style enforcement:**
 ```
-When reviewing quest progress, check that all new TypeScript files
-include explicit return types on exported functions. If a quest has
-committed code without return types, send a follow-up message to the
-quest session asking it to add them before considering the quest complete.
+When a quest has committed code, check that new TypeScript files include
+explicit return types on exported functions. If not, send a follow-up
+message to the quest session asking it to add them before considering
+the quest complete.
 ```
 
-**Notification rules:**
+**Answering policy:**
 ```
-After activating a backlog quest, log a summary of the quest title
-and description. When a quest has been active for more than 30 minutes
-without new commits, flag it as needing attention.
-```
-
-**Branch naming convention:**
-```
-When quests create branches, verify the branch name follows the
-convention: type/TICKET-123-short-description. If a quest's branch
-does not match, note it but do not block progress.
+When an agent asks which of several approaches to take and one is marked
+(Recommended), pick it. When none is recommended, prefer the smallest
+change. Never approve a request to force-push.
 ```
 
-## How the Supervisor Prompt Is Built
-
-When the supervisor starts, Sidequest assembles the prompt from several pieces:
-
-<Mermaid chart={`graph TD
-  A[Supervisor Skill File\n~/.sidequest/skills/sidequest-supervisor.md] --> E[Final Prompt]
-  B[Capabilities Config\nauto_answer, pull_backlog, ceiling] --> E
-  C[Close Quest Prompt] -->|if enabled| E
-  D[Extended Instructions] -->|if enabled| E`} />
-
-1. **System prompt** -- loaded from `~/.sidequest/skills/sidequest-supervisor.md` (written on startup from the bundled default)
-2. **Capabilities line** -- auto-generated from config: `auto_answer: true, pull_backlog: true, ceiling: 3, close_quest: false`
-3. **Close quest section** -- included only if close quest is enabled and a prompt is provided
-4. **Extended instructions section** -- included only if enabled and non-empty
-
-The final message sent to Claude looks like:
-
+**Reporting:**
 ```
-You are supervising project {project_id}. Enabled capabilities:
-auto_answer: true, pull_backlog: true, ceiling: 3, close_quest: true.
-
-## Close Quest Conditions
-You are authorized to close (archive) quests when they meet the user's
-completion criteria. The user defines "done" as:
-{close_quest_prompt}
-
-## Extended Instructions
-{extended_prompt}
-
-Begin your supervision loop.
+After activating a backlog quest, log the quest title and description.
+When a quest has been active for more than 30 minutes without new
+commits, flag it as needing attention.
 ```
 
-## Supervisor Session
+## The notes file
 
-The supervisor runs as a tmux session named `sq-supervisor-<project-id>`. You can view its terminal output by clicking the chat bubble icon next to the supervisor toggle. This opens a terminal panel showing the supervisor's Claude Code conversation in real time.
+A supervisor's context is not durable: the session restarts, and a long run compacts. The system prompt therefore tells it to keep `~/.sidequest/supervisor-state/<supervisor-id>/notes.md`, read it at the start of every loop and update it at the end:
 
-The supervisor session:
+- `## Handled` -- one line per thing it already acted on (`- PR #553: reviewed, approved 2026-10-13`). Everything here is treated as done, which is what makes "only look at new things" hold across a restart.
+- `## Learnings` -- short facts about the group that changed how it acts (`- the foreman's quests merge via /smash-merge; do not nudge them to open PRs`).
 
-- Runs with `--dangerously-skip-permissions` for autonomous operation
-- Uses the `--system-prompt` flag to load the supervisor skill file
-- Optionally includes `--chrome` if Chrome integration is enabled in settings
-- Resolves the Claude binary path from settings to avoid shell alias issues
+It appends rather than rewrites, keeps the file under 100 lines by dropping handled entries whose quest is closed, and trusts the notes over its own memory when it sees the brief a second time. You can read the file to see what a supervisor thinks it has done, or edit it to correct it; delete it to start the supervisor with a blank memory.
 
-### Stopping the Supervisor
+## Queue and ceiling
 
-Clicking the toggle to stop the supervisor:
+Pulling from the backlog is done by Sidequest, not by the agent. While the supervisor is running and **Pull backlog to active** is on, Sidequest checks every 30 seconds whether fewer than **ceiling** of its quests are active and, if so, promotes the top of **Up next** and launches its session in the background. The order is the position you set by dragging; quests that were never explicitly ordered (for example ones spawned by a recurring quest) come after the ordered ones.
 
-1. Sends `/exit` to the Claude Code session for a graceful shutdown
-2. Waits 500ms for Claude to process the exit
-3. Tears down the PTY reader
-4. Kills the tmux session as a fallback
+The ceiling is enforced at the point of promotion. If you manually activate more quests, the supervisor does not demote them; it only stops promoting.
 
-The supervisor also auto-stops when all quests are removed from a project.
+## Model choice
 
-## Editing the Supervisor Skill
+A supervisor reads terminals and makes small judgement calls, so Sonnet is usually enough and keeps it cheap. Pick Opus for a supervisor whose close criteria require real judgement (reading a PR and its CI, say). The smart router never routes supervisors; **Auto** means your Claude Code default.
 
-The supervisor's base behavior is defined in `~/.sidequest/skills/sidequest-supervisor.md`. This file is overwritten from the bundled default each time Sidequest starts, so direct edits will not persist across restarts. Use the **extended prompt** for durable customizations.
+## Reporting lines
 
-If you need to make structural changes to the supervisor's behavior, the extended prompt is the supported mechanism. It is appended to the supervisor's context and can override or supplement any of the default instructions.
+With **Reports to** set, the parent supervisor's prompt lists its children. Each loop it re-queries them, so changing the link applies live. The parent captures the child's pane and answers prompts the child's own session raises, counts the child's quests in its status table, and reports a child that is down with work waiting -- but it never reads or closes the child's quests and never starts or stops the child.
+
+## Linux note
+
+The bundled system prompt refers to the macOS database path (`~/Library/Application Support/com.sidequest.app/sidequest.db`). On Linux, add the correct path to the extended prompt so `sqlite3` commands work:
+
+```
+The Sidequest database is at ~/.config/com.sidequest.app/sidequest.db.
+```

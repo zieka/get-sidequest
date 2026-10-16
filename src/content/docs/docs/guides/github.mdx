@@ -1,0 +1,54 @@
+---
+title: GitHub Integration
+description: Browse issues, start quests from them, review pull requests and track PR state on quest cards.
+---
+
+Sidequest talks to GitHub through the `gh` CLI. Install it, run `gh auth login`, and any project whose `origin` remote points at github.com gains the features below. Nothing is sent anywhere but GitHub, and Sidequest never creates or merges pull requests on its own -- the agent runs `gh pr create` when you ask it to.
+
+## What `gh` enables
+
+| Feature | Where |
+|---------|-------|
+| Clone a repository by URL or `owner/repo` | Add Project > **Clone** |
+| Browse open issues and start quests from them | Project menu > **Issues...** |
+| Use issues as quest prompts, one quest per issue or one for all | Create Quest > **GitHub Issues** |
+| Review a pull request in an isolated worktree | Project menu > **Review Pull Request...**, or a **Review** quest |
+| Issue and pull-request badges on quest cards | Quest log |
+| Images attached to private-repo issues | Issue details |
+
+## Issues browser
+
+Right-click a project and choose **Issues...**. The dialog lists up to 500 open issues with a search box that matches title, `#number`, label or author. Select an issue to read it (with rendered markdown and images), then:
+
+- **Open on GitHub** -- open it in your browser.
+- **Start quest** -- immediately creates an active Worktree quest on the current branch, titled after the issue, with a prompt built from the issue body and comments, and linked to the issue. No form; the quest starts right away.
+
+Issues that already have a quest show a **has a quest** badge.
+
+## Issues in the Create Quest dialog
+
+Tick **GitHub Issues** in the Create Quest dialog to search and select open issues. Selecting one fills the prompt with the issue's title, body, comments and linked issues so the agent has the full context. With two or more selected, choose a **Quest creation mode**:
+
+- **One quest per issue** (default) -- creates one quest for each; the button reads **Create N Quests**.
+- **One quest for all selected issues** -- a single quest whose prompt covers them all.
+
+## Badges on quest cards
+
+Quest cards show small GitHub badges, polled every 60 seconds:
+
+- **Issue badge** -- green when open, purple when closed. The tooltip lists each linked issue.
+- **Pull-request badge** -- the newest PR for the quest's branch: green open, grey draft, purple merged, red closed. A PR merged while the quest is still active turns amber and the card's status reads **Ready to close**.
+
+Click a badge to open the issue or PR. **Option-click** the PR badge of a Worktree quest to pick a different PR to track (search by title, number, author or branch); **Follow the quest's branch** returns to the automatic lookup. Review quests always track the PR they were created for.
+
+If GitHub is unreachable or rate-limited, existing badges stay as they were rather than disappearing.
+
+## Review quests
+
+A Review quest fetches a pull request's head branch into its own worktree and sends the agent `/review <number>` (or your project's **Review Template**). If the PR branch is checked out elsewhere on your machine, the quest checks out the fetched commit detached so your checkout is untouched. See [Quest Types](/get-sidequest/docs/guides/quest-types/#review).
+
+## Opening pull requests
+
+Sidequest configures each new worktree's branch to track the base branch, so `gh pr create` inside a quest targets the right branch without flags. Ask the agent to "open a PR for this" when the work is done, or add that to a supervisor's **close completed quests** criteria so finished quests are archived once their PR exists and CI is green.
+
+The **Open Remote** menu item on a project or quest opens the repository (or the quest's branch) in your browser.

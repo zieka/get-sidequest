@@ -1,16 +1,31 @@
 ---
 title: Sidequest Documentation
-description: Learn how to use Sidequest to orchestrate parallel Claude Code sessions.
+description: Learn how to use Sidequest to run and supervise parallel coding-agent sessions.
 ---
 
-Welcome to the Sidequest documentation. Whether you're getting started or looking for advanced configuration, you'll find what you need here.
+Welcome to the Sidequest documentation. Sidequest runs coding agents -- Claude Code, Gemini CLI, Codex CLI, Copilot CLI and OpenCode -- as **quests** on a per-project board, isolates each one in its own git worktree, and lets a **supervisor** agent keep the board moving while you are away.
+
+This documentation describes Sidequest **0.75**, plus two supervisor changes merged after that release: a default supervisor per project and supervisors that resume their session on restart.
 
 ## Quick Links
 
-- [Installation](/get-sidequest/docs/getting-started/installation/) — Download and set up Sidequest on macOS or Linux
-- [First Quest](/get-sidequest/docs/getting-started/first-quest/) — Run your first parallel agent session
-- [Quest Types](/get-sidequest/docs/guides/quest-types/) — Understand Research, Changes, and Review quests
-- [Recurring Quests](/get-sidequest/docs/guides/recurring-quests/) — Schedule quests to run automatically
-- [Council](/get-sidequest/docs/guides/council/) — Get a second opinion from an alternative AI agent
-- [Usage Dashboard](/get-sidequest/docs/guides/usage-dashboard/) — Track token usage and costs
-- [Keyboard Shortcuts](/get-sidequest/docs/reference/shortcuts/) — Navigate Sidequest like a pro
+- [Installation](/get-sidequest/docs/getting-started/installation/) -- Download and set up Sidequest on macOS or Linux
+- [First Quest](/get-sidequest/docs/getting-started/first-quest/) -- Run your first parallel agent session
+- [Quest Types](/get-sidequest/docs/guides/quest-types/) -- Worktree, Current Branch and Review quests
+- [Agents and Models](/get-sidequest/docs/guides/agents-and-models/) -- Pick an agent, a model and an effort level, or let the smart router choose
+- [Supervisors](/get-sidequest/docs/guides/supervisors/) -- Group quests under an agent that answers prompts and pulls work from a queue
+- [Journals](/get-sidequest/docs/guides/journals/) -- Automatic notes that later quests read as memory
+- [Sidequest CLI](/get-sidequest/docs/advanced/cli/) -- Let agents create quests and search journals from the terminal
+- [Keyboard Shortcuts](/get-sidequest/docs/reference/shortcuts/) -- Navigate Sidequest like a pro
+
+## What changed recently
+
+If you last used Sidequest in the spring, the biggest changes are:
+
+- **Quest types were renamed.** "Changes" is now **Worktree** and "Research" is now **Current Branch**. The behaviour is unchanged.
+- **Supervisors are cross-repo groups**, not a per-project toggle. Open them from the robot button in the bottom bar.
+- **Five agents.** Gemini CLI, Codex CLI, Copilot CLI and OpenCode can run quests alongside Claude Code.
+- **Smart model router** picks a model and effort per quest; **profiles** let you run quests under different Claude accounts.
+- **Journals are written automatically** when a quest completes, and a `sidequest-journal` CLI lets agents search them.
+- **Supervisors remember.** A restarted supervisor resumes its previous conversation and keeps a notes file, and each project can name a **default supervisor** for new quests.
+- **Home quests**, the **Active Quests** timeline, **token budgets**, **GitHub issue browsing**, cloning projects from a URL, and more.
