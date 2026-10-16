@@ -1,0 +1,109 @@
+---
+title: Supervisors
+description: Group quests from any project under a supervisor agent that answers prompts, pulls from a queue, closes finished work and escalates what needs you.
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+
+A **supervisor** is a long-running Claude Code session that watches a group of quests. It answers the routine prompts your agents stop on, pulls the next quest from its queue when a slot frees up, can archive quests that meet your definition of done, and leaves anything risky flagged for you.
+
+Supervisors are not tied to a project: one supervisor can watch quests from every repository you have, and you can run several supervisors at once -- for example one for feature work and one for nightly chores.
+
+:::note
+Before 0.65 each project had its own supervisor toggle in the project header. That UI is gone; supervisors now live on the **Supervisors** board described below, and no supervisor exists until you create one.
+:::
+
+## The Supervisors board
+
+Click the **robot** button in the bottom bar (tooltip **Supervisors**) to open the board. The robot is awake while any supervisor is running and shows an orange **!** when a running supervisor has a quest that needs your attention.
+
+The board has two halves:
+
+- **Unassigned** (left) -- every active and backlog quest that has no supervisor, grouped by project. Type in **Filter quests…** to narrow the list; Esc clears it.
+- **One sheet per supervisor** (right) -- its name, a running/stopped dot, **Start** / **Stop**, a speech bubble to **View supervisor chat**, and a gear for its **Rules**. Below are two sections: **Working** (with a `used/ceiling` slot counter) and **Up next**, the numbered queue.
+
+At the end of the grid a dashed card offers **+ New supervisor**; you can also **drop a quest here to found one**.
+
+### Assigning quests
+
+Any of these hands a quest to a supervisor:
+
+- **Drag** a quest card from Unassigned (or from another sheet) onto a sheet. Where you drop it in **Up next** sets its position in the queue; an amber line shows exactly where it will land.
+- **Drag a project header** from Unassigned onto a sheet to hand over every open quest in that project at once, together with the project's recurring quest definitions. Quests created later are not assigned automatically unless the project has a default supervisor.
+- Right-click a quest card in the quest log and use **Add to Supervisor**.
+- Pick a **Supervisor** in the Create Quest or Edit Quest dialog, or in a recurring quest's form.
+- Set a **Default supervisor** in [Project Settings](/get-sidequest/docs/getting-started/first-workspace/#project-settings). New quests in that project -- from the dialog, the CLI, new recurring templates and agent-created quests -- start with it; you can still change it per quest. Changing the default never moves existing quests.
+
+A quest belongs to at most one supervisor. To take it back, hover a row on the sheet and click **Unassign**, drag it back to Unassigned, or set its supervisor to **None** in Edit Quest. Unsupervised quests behave exactly as before -- they run, but nobody answers their prompts for you.
+
+Quest cards show a small robot when they are supervised; click it to open the board scrolled to that quest.
+
+## What a supervisor does
+
+<Mermaid chart={`graph TD
+  S[Supervisor session] -->|every 30s| L[Read each quest's terminal]
+  L -->|prompt waiting| A[Answer it]
+  L -->|risky action| E[Leave flagged: needs attention]
+  L -->|meets close criteria| C[Archive quest]
+  W[Sidequest watcher] -->|slot free| P[Pull top of queue to Active]
+  W -->|work waiting & auto-start| S`} />
+
+Every 30 seconds the supervisor reads the terminal of each of its active quests and:
+
+- **Answers prompts** -- permission requests, "(Recommended)" choices, yes/no confirmations and small design questions, so quests keep moving. It then clears the quest's attention flag.
+- **Escalates** -- destructive git operations, merges to main, deleting worktrees, anything involving secrets, external side effects or notable cost are left alone with the quest marked **Needs attention**, and the reason is logged in the supervisor's own terminal.
+- **Closes quests** -- when **Close completed quests** is on and a quest meets your criteria, the supervisor archives it (it may check `gh pr list` and CI first).
+- **Watches child supervisors** -- see [Reporting lines](#reporting-lines).
+- **Keeps notes** -- reads its notes file at the start of each loop and appends what it handled and learned at the end, so a restart or context compaction does not make it redo work.
+- Prints a status table of its quests, what each is doing and its last action.
+
+Sidequest itself, not the agent, handles the queue: while a supervisor is running and **Pull backlog to active** is on, the top quest in **Up next** is promoted whenever fewer than **ceiling** of its quests are active, and its session is launched in the background.
+
+To see the supervisor think, click the speech bubble on its sheet: a full-screen view of its Claude Code session opens. Press Esc to return.
+
+## Rules
+
+Click the gear on a sheet to open its rules. Most options are baked into the session's prompt, so they are locked while the supervisor is running; stop it, change them, and start it again.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| **Name** | "New supervisor" | Click the name on the sheet to edit it inline |
+| **Reports to** | None | Another supervisor that watches this one's session (editable while running) |
+| **Model** | Auto (agent default) | Fable, Opus, Sonnet, Haiku, a recently used model, or any model id. Passed as `--model`; takes effect on the next start |
+| **Auto-answer active quests** | On | Answer prompts in supervised quests |
+| **Auto-start when work is waiting** | Off | Start this supervisor by itself whenever it has work (editable while running) |
+| **Pull backlog to active** | On | Promote queued quests as slots free up, up to the **ceiling** (1--10, default 3) |
+| **Close completed quests** | Off | Archive quests that meet the criteria you describe in the text box |
+| **Extended prompt** | Off | Extra instructions appended to the supervisor's prompt |
+| **Delete supervisor** | | Removes the supervisor. The confirmation lists what still uses it: projects that default to it (the default is cleared), open quests (unassigned; queued ones stop being pulled), recurring quests (future runs are unsupervised) and supervisors reporting to it (they become top-level) |
+
+See [Supervisor Customization](/get-sidequest/docs/advanced/supervisor-customization/) for how the prompt is assembled and examples of close criteria and extended prompts.
+
+## Starting and stopping
+
+Click **Start** on a sheet to launch the supervisor; **Stop** sends `/exit` to its session and kills it.
+
+Each supervisor owns one Claude Code session. **Start** resumes that conversation if it exists, so a restarted supervisor still knows what it did; the brief is sent again, so rule changes made while it was stopped take effect. Its notes file survives too (see [Supervisor Customization](/get-sidequest/docs/advanced/supervisor-customization/#the-notes-file)).
+
+With **Auto-start when work is waiting** on, Sidequest starts the supervisor by itself as soon as it has something to do: an active quest, a queued quest (if pulling is enabled) or a running child supervisor. A manual **Stop** suppresses auto-start until the supervisor's work count drops to zero, so a stopped supervisor stays stopped. If five automatic starts in a row fail, Sidequest gives up and asks you to start it by hand to see the error.
+
+A running supervisor **stops by itself** once all of its quests are completed or unassigned -- unless it has recurring quest definitions attached or is the parent of another supervisor, in which case it stays up.
+
+## Reporting lines
+
+Set **Reports to** on a supervisor and the chosen parent watches that supervisor's *own* session the way the supervisor watches its quests: it reads the terminal, answers prompts, and counts the child's quests in its status table (reporting "down with N quests waiting" when a child with work is not running). The parent never touches the child's quests directly and never starts or stops the child.
+
+A supervisor has at most one parent, cannot report to itself, and cannot be part of a loop; the picker hides any choice that would create one. Sheets show **↳ reports to Name** under the title.
+
+Use this to keep a "lead" supervisor running cheaply on Sonnet that unblocks several specialised ones, or to give a nightly chores supervisor someone to answer it at 3 a.m.
+
+## Recurring quests and supervisors
+
+A recurring quest definition can name a supervisor. Each quest it spawns is handed to that supervisor and, while the supervisor is running, waits in its queue instead of starting immediately. If the supervisor is stopped, spawned quests start on their own as before. See [Recurring Quests](/get-sidequest/docs/guides/recurring-quests/).
+
+## Tips
+
+- **One supervisor per kind of work.** Keep a cheap Sonnet supervisor for chores and a careful Opus one for feature branches; the ceiling on each controls how much runs in parallel.
+- **Order the queue deliberately.** The top of **Up next** is pulled first; drag rows to reorder them.
+- **Watch the orange badge.** The robot's **!** means a supervisor chose not to act on something. Open the quest and answer it yourself.
+- **Supervisors use `sqlite3` and `tmux` directly** on Sidequest's database and sessions. They are powerful; give them close criteria you would be happy to have applied unattended.

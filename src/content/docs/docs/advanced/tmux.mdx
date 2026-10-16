@@ -1,33 +1,35 @@
 ---
 title: Tmux Configuration
-description: Configure tmux settings used by Sidequest for session management.
+description: How Sidequest uses tmux for session management, and what it changes.
 ---
 
-Sidequest uses **tmux** to manage persistent terminal sessions for each quest. Every Claude Code session runs inside a tmux session, which allows sessions to survive app restarts, disconnects, and system sleep.
+Sidequest uses **tmux** to manage persistent terminal sessions for every quest, supervisor and council. Each agent runs inside a tmux session, which allows sessions to survive app restarts, disconnects, and system sleep.
 
 ## Why Tmux?
 
-Without tmux, closing the Sidequest window or restarting the app would kill all running Claude Code sessions. Tmux solves this by decoupling the process from the terminal:
+Without tmux, closing the Sidequest window or restarting the app would kill all running sessions. Tmux decouples the process from the terminal:
 
-- **Persistence.** Claude Code keeps running even if Sidequest is closed. Reopen the app and your sessions are still there.
-- **Reconnection.** Sidequest attaches a PTY (pseudo-terminal) to the tmux session for streaming output to the UI. If the PTY dies, it can reattach without interrupting Claude.
+- **Persistence.** Agents keep running even if Sidequest is closed. Reopen the app and your sessions are still there.
+- **Reconnection.** Sidequest attaches a PTY (pseudo-terminal) to the tmux session to stream output into the embedded terminal. If the PTY dies, it can reattach without interrupting the agent.
 - **Isolation.** Each quest gets its own tmux session. Killing one does not affect others.
 
 ## Session Naming
 
-All Sidequest tmux sessions use the prefix `sq-` followed by the quest ID:
+All Sidequest tmux sessions use the prefix `sq-`:
 
 ```
-sq-<quest-uuid>              # Regular quest session
-sq-supervisor-<project-id>   # Supervisor session for a project
+sq-<quest-uuid>                  # Quest session
+sq-supervisor-<supervisor-id>    # Supervisor session
+sq-council-<quest-uuid>          # Council review session
+sq-profile-login-<profile-id>    # Temporary session for `claude auth login`
 ```
 
-You can see your Sidequest sessions alongside any personal tmux sessions:
+You can see them alongside any personal tmux sessions:
 
 ```bash
 tmux list-sessions
 # sq-a1b2c3d4-e5f6-... : 1 windows (created ...)
-# sq-f7g8h9i0-j1k2-... : 1 windows (created ...)
+# sq-supervisor-s-platform : 1 windows (created ...)
 # my-personal-session   : 3 windows (created ...)
 ```
 
@@ -38,11 +40,12 @@ Sidequest only manages sessions with the `sq-` prefix. Your personal tmux sessio
 When you activate a quest, Sidequest:
 
 1. Creates a detached tmux session: `tmux new-session -d -s sq-<quest-id> -c <working-dir>`
-2. Runs Claude Code inside it via your login shell (`zsh -ilc "claude ..."`) to ensure PATH includes tools like `node`, `nvm`, `mise`, etc.
-3. Attaches a PTY to stream output to the Sidequest UI
-4. Auto-accepts Claude Code's trust/permission prompts by detecting the dialog and sending the appropriate keypress
+2. Prepends `~/.sidequest/bin` to `PATH` inside the session so the `sidequest` and `sidequest-journal` commands are available to the agent
+3. Runs the agent through your login shell (`zsh -ilc "claude ..."`) so `PATH` includes tools from `node`, `nvm`, `mise`, etc.
+4. Attaches a PTY to stream output to the embedded terminal
+5. Auto-accepts the agent's trust/permission dialogs by detecting them and sending the appropriate keypress
 
-The session runs with `LANG=en_US.UTF-8` and `LC_CTYPE=en_US.UTF-8` to ensure Unicode characters render correctly. Without this, apps launched from Finder inherit a minimal locale from launchd that causes tmux to replace Unicode with underscores.
+The session runs with `LANG=en_US.UTF-8` and `LC_CTYPE=en_US.UTF-8` to ensure Unicode renders correctly. Without this, apps launched from Finder inherit a minimal locale that makes tmux replace Unicode with underscores.
 
 ## Tmux Path Resolution
 
@@ -54,38 +57,45 @@ Sidequest auto-discovers your tmux installation by:
    - `/usr/local/bin/tmux` (Homebrew on Intel)
    - `/usr/bin/tmux` (system package manager)
 
-You can override the tmux path in **Settings** if auto-discovery does not find the correct binary.
-
-Sidequest always resolves to an absolute path. A bare `tmux` command would fail when the app is launched from Finder, since Finder-launched apps inherit a minimal `PATH` that does not include Homebrew directories.
+You can override the tmux path in **Settings > Tools** if auto-discovery does not find the correct binary. Sidequest always resolves to an absolute path, because a bare `tmux` would fail when the app is launched from Finder.
 
 ## Configuration
 
+### Server settings applied at startup
+
+When Sidequest creates its first session it sets three options on the running tmux server. They are not written to any file, so they last until the server exits:
+
+```
+set-option -s escape-time 0          # no delay after Esc (agents use it to interrupt)
+set-option -s focus-events on        # agents learn when the pane gains/loses focus
+set-option -g default-terminal tmux-256color
+```
+
+**Settings > Tools > Tmux Config Recommendations** shows the same snippet with a **Copy snippet** button. Add it to `~/.tmux.conf` to make the settings permanent for your own tmux sessions as well.
+
 ### Scrollback Buffer
 
-Sidequest caps each session's scrollback to **1000 lines** to prevent memory bloat when many quests run simultaneously. This is set per-session and does not affect your global tmux config:
+Sidequest caps each session's scrollback to **1000 lines** to prevent memory bloat when many quests run simultaneously:
 
 ```
 set-option -t sq-<id> history-limit 1000
 ```
 
-The Sidequest UI uses xterm.js with its own scrollback, so you typically do not need tmux's scrollback buffer.
+The embedded terminal keeps no scrollback of its own; scrolling in the UI scrolls tmux's buffer.
 
 ### Mouse Mode
 
-By default, Sidequest enables mouse mode on quest sessions so scroll events work in the embedded terminal:
+**Settings > Tools > Tmux Mode** chooses how input is handled:
 
-```
-set-option -t sq-<id> mouse on
-```
+- **Chill mode** (default) -- tmux mouse mode is on, and Sidequest translates your wheel and clicks into tmux mouse reports while keeping text selection and the right-click menu native. Typing automatically leaves tmux copy mode.
+- **Mouse mode** -- native tmux mouse mode; selection follows tmux and the right-click menu is unavailable.
+- **Raw tmux** -- mouse mode off; tmux receives raw input for users who want native tmux keybindings.
 
-You can switch between tmux interaction modes in Settings:
-
-- **Chill mode** (default) -- mouse mode enabled, smooth scrolling in the UI terminal
-- **Raw mode** -- mouse mode disabled, tmux receives raw input for advanced users who want native tmux keybindings
+Changing the mode shows a toast asking you to reload so existing sessions pick it up.
 
 ### Your Global Config
 
-Sidequest does not read or modify your `~/.tmux.conf`. Session-level options are set independently. However, your global config still applies as the baseline for all sessions. If you have aggressive settings (like very high `history-limit`), the per-session override will take precedence for Sidequest sessions.
+Sidequest does not read or modify your `~/.tmux.conf`. Your global config still applies as the baseline for all sessions; the per-session options above take precedence for Sidequest sessions.
 
 ## Installation
 
@@ -112,10 +122,10 @@ Verify the installation:
 
 ```bash
 tmux -V
-# tmux 3.4
+# tmux 3.5a
 ```
 
-Sidequest requires tmux to be installed. If tmux is not found, quest sessions cannot be created.
+Sidequest requires tmux to be installed. If tmux is not found, sessions cannot be created.
 
 ## Troubleshooting
 
@@ -125,7 +135,7 @@ Sidequest could not find tmux on your system. Install it using the commands abov
 
 ### Sessions survive after quitting Sidequest
 
-This is by design. Tmux sessions persist independently of the app. When you reopen Sidequest, it reconciles with existing `sq-` sessions and reattaches automatically. If you want to kill orphaned sessions manually:
+This is by design. When you reopen Sidequest, it reconciles with existing `sq-` sessions and reattaches automatically. Sessions whose quest or supervisor no longer exists are listed under **Settings > Storage > Orphaned Tmux Sessions**; or from the shell:
 
 ```bash
 # Kill a specific session
@@ -143,9 +153,9 @@ This happens when tmux does not have a UTF-8 locale. Sidequest sets `LANG=en_US.
 locale -a | grep UTF-8
 ```
 
-### Claude binary not found inside tmux
+### Agent binary not found inside tmux
 
-When launched from Finder, the app has a minimal PATH. Sidequest resolves the full path to both `tmux` and `claude` before creating sessions, and runs commands via your login shell (`zsh -ilc`) to source `.zprofile` and `.zshrc`. If Claude still is not found, set the explicit path in Settings.
+When launched from Finder, the app has a minimal PATH. Sidequest resolves the full path to both `tmux` and the agent before creating sessions, and runs commands via your login shell to source `.zprofile` and `.zshrc`. If the agent still is not found, set its explicit path in **Settings > Agent**.
 
 ### Session appears dead but tmux is running
 

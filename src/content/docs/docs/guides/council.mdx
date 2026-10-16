@@ -1,28 +1,43 @@
 ---
 title: Council
-description: Get a second opinion on your quest's work from an alternative AI agent.
+description: Get a second opinion on your quest's work from a separate, adversarial agent session.
 ---
 
-The Council extension gives you a second opinion on any active quest's conversation. It spawns a separate AI session that reviews the current quest's work from an adversarial, red-team perspective -- challenging assumptions, identifying risks, and flagging blind spots.
+The Council extension gives you a second opinion on the active quest's conversation. It briefs a separate agent session on what the quest has done and asks it to review the work from a red-team perspective -- challenging assumptions, identifying risks and flagging blind spots.
 
 ## How It Works
 
-1. Open the Council panel from the bottom toolbar.
-2. Select an **agent** from the dropdown: Claude Code or Gemini CLI.
+1. Open the **Council** panel from the bottom toolbar (**⌘7** by default; only one extension panel is open at a time).
+2. Select an **agent** from the dropdown: Claude Code, Gemini CLI, Codex CLI or Copilot CLI.
 3. Click **Get Council Feedback**.
 
 Sidequest then:
 
-1. Extracts the active quest's conversation history.
-2. Summarizes it using Claude Haiku for efficiency.
-3. Saves the summary to `~/.sidequest/council/<quest-id>.md`.
-4. Spawns the selected agent with the summary and a red-team review prompt.
+1. Extracts the active quest's conversation, keeping the most recent 200,000 characters. It needs at least two messages; otherwise it asks you to let the quest run further.
+2. Summarizes it into a **briefing** with Claude. The model comes from the `council` entry in the [router rules](/get-sidequest/docs/advanced/router-rules/) -- Opus by default, since a good briefing matters more than speed here.
+3. Saves the briefing to `~/.sidequest/council/<quest-id>.md`.
+4. Launches the selected agent in a tmux session named `sq-council-<quest-id>`, in the quest's working directory, with the briefing and a red-team review prompt. Claude Code councils run at Extra High effort and inherit the quest's permission mode.
 
-The agent's live output streams into an embedded terminal in the Council panel.
+The agent's live output streams into an embedded terminal in the Council panel. Reopening the panel reattaches to an existing council session; completing the quest interrupts it.
+
+## The briefing
+
+The briefing is written as a self-contained dossier so the reviewer does not need the original transcript:
+
+- **Goal**
+- **Scope & Artifacts** -- file paths, commits, PR and issue numbers, symbol names
+- **What Was Done**
+- **Decisions & Rationale**
+- **Assumptions**
+- **Open Questions & Known Risks**
+- **Verification State** -- what was tested and how
+- **Reviewer Hints**
+
+The reviewer is told to use **Scope & Artifacts** to inspect the actual code in the working directory rather than critiquing from the summary alone.
 
 ## Red-Team Stance
 
-The council agent receives instructions to act as a red-team code reviewer:
+The council agent is instructed to act as a red-team code reviewer:
 
 - Challenge assumptions and question design decisions
 - Identify potential risks, edge cases, and blind spots
@@ -33,14 +48,14 @@ This adversarial framing helps surface issues that the primary agent may have ov
 
 ## Agent Selection
 
-The Council supports multiple AI backends through an adapter system:
-
-| Agent | Description |
+| Agent | How it runs |
 |-------|-------------|
-| **Claude Code** | Runs a separate Claude Code session. Uses `--dangerously-skip-permissions` for autonomous operation. |
-| **Gemini CLI** | Runs Google's Gemini CLI. Uses `--yolo` flag for auto-approved actions. |
+| **Claude Code** | A separate Claude Code session in the quest's directory |
+| **Gemini CLI** | Google's Gemini CLI with auto-approval |
+| **Codex CLI** | OpenAI's Codex CLI in full-auto mode |
+| **Copilot CLI** | GitHub Copilot CLI with all actions allowed |
 
-Select your preferred council agent in **Settings > Model Providers** or from the dropdown in the Council panel itself. Sidequest checks whether the selected CLI is installed and shows a detection status indicator.
+Choose the default in **Settings > Model Providers > Council Agent** or from the dropdown in the panel. Sidequest checks whether the selected CLI is installed and shows a detection status. OpenCode is not offered for councils.
 
 ## When to Use Council
 
@@ -50,4 +65,4 @@ Council is most useful when:
 - A quest has been running for a while and you want fresh eyes on its approach.
 - You want to compare perspectives between different AI models on the same problem.
 
-The council session is independent of the quest session -- it cannot modify the quest's files or interfere with its work. It only reads the conversation summary.
+The council session is independent of the quest session. It can read the quest's working directory but does not interfere with the quest's own conversation.

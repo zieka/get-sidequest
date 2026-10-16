@@ -5,7 +5,7 @@ description: Speed up your workflow with Sidequest keyboard shortcuts.
 
 Sidequest is designed for keyboard-driven workflows. Most actions have shortcuts so you can stay in flow without reaching for the mouse.
 
-Press **Cmd+/** to open the shortcuts reference inside the app at any time.
+Press **Cmd+/** to open the shortcuts reference inside the app at any time. Shortcuts use the **Cmd** key on both macOS and Linux.
 
 ## Navigation
 
@@ -13,7 +13,7 @@ Move between quests without leaving the keyboard:
 
 - **Cmd+[** -- Go back to the previous quest in your navigation history.
 - **Cmd+]** -- Go forward to the next quest in your navigation history.
-- **Cmd+Shift+P** -- Open the command palette to search and jump to any quest, project, or file across all your workspaces.
+- **Cmd+Shift+P** -- Open the command palette to search and jump to any quest or project, or search files in the active worktree.
 
 Navigation history works like a browser -- every time you activate a quest, it gets pushed to the stack. Back and forward let you retrace your steps across projects.
 
@@ -25,26 +25,37 @@ Each panel in the layout has a number shortcut. These toggle the panel on and of
 - **Cmd+2** -- Quest Log
 - **Cmd+3** -- Terminal
 - **Cmd+4** -- Changes (diff viewer)
-- **Cmd+5, 6, ...** -- Extension panels (in the order they appear in your bottom toolbar)
+- **Cmd+5, 6, 7** -- Extension panels in the order they appear in your bottom toolbar (Live Stats, Toolkit, Council by default)
 
 Only one extension panel can be open at a time. Toggling an extension closes any other open extension.
 
 **Tip:** Hold down the Cmd key for about a second to see shortcut labels appear above each panel toggle button in the bottom toolbar.
 
-## Terminal Font
+## Zoom
 
-Adjust the terminal font size on the fly:
+- **Cmd+=** (or **Cmd+Plus**) -- Zoom in
+- **Cmd+-** -- Zoom out
 
-- **Cmd+=** (or **Cmd+Plus**) -- Increase font size
-- **Cmd+-** -- Decrease font size
+Zoom scales the whole interface, including the terminal, from 50% to 200%. The terminal's base font size, family and weight are set separately in **Settings > Appearance > Terminal**.
 
-These affect the xterm.js terminal where Claude Code sessions run.
+## Changes panel
+
+- **Cmd+F** (or **Ctrl+F**) -- Find in the diff. **Enter** / **Shift+Enter** step through matches; **Esc** closes.
 
 ## General
 
 - **Cmd+,** -- Open Settings
 - **Cmd+R** -- Reload the window (useful if the UI gets into a bad state)
 - **Cmd+/** -- Show keyboard shortcuts reference
+
+These shortcuts work even while the terminal has focus; everything else you type goes to the agent.
+
+## Terminal
+
+- **Cmd+C** -- Copy the selection if there is one; otherwise it is passed to the terminal.
+- **Ctrl+C** -- Interrupt, as in any terminal.
+- **Cmd+V** -- Paste. Pastes longer than 300 lines are written to a temporary file and its path is pasted instead.
+- **Ctrl+V** -- Sent through literally, which is how Claude Code accepts a pasted image.
 
 ## Menu Bar Shortcuts
 
@@ -61,10 +72,10 @@ Standard macOS shortcuts are available from the Edit menu:
 
 The command palette (**Cmd+Shift+P**) is the fastest way to do almost anything:
 
-1. Start typing to search quests across all projects.
-2. Select a quest to jump directly to it and activate its terminal session.
-3. From the results, you can also create new quests, open quests in your editor, or activate backlog quests.
-4. Type **>** at the start of your query to switch to file search mode, which fuzzy-searches files in the active quest's worktree.
+1. Start typing to search quests across all projects. Results are grouped by project: the project row, then its active quests, then its backlog quests.
+2. Select an active quest to jump to it; select a backlog quest to edit it; select a project to open its quest log.
+3. On the highlighted row, press **Q** on a project to create a quest, **E** on an active quest to open it in your editor, or **A** on a backlog quest to activate it.
+4. Type **>** at the start of your query to switch to file search, which fuzzy-searches files in the active quest's worktree and opens the selection in your editor.
 
 ### Slash Commands
 
@@ -76,10 +87,15 @@ Type **/** in the command palette to access project-level slash commands:
 
 Tab auto-completes the command name. Type a space after the command to filter projects by name. If exactly one project matches, the command executes automatically.
 
+## Menus
+
+- Hold **Option** while a quest or project context menu is open and **Open in Editor** / **Open in Terminal** expand into submenus listing every editor and terminal, with your default marked.
+- In the **Review old journals** dialog, **K** keeps the entry, **X** archives or deletes it, and **→** skips it.
+
 ## Workflow Tips
 
 **Rapid context switching.** Use Cmd+Shift+P to jump between quests in different projects. Combined with Cmd+[ and Cmd+], you can flip between two quests you are actively working on without scrolling through the sidebar.
 
-**Focused mode.** Toggle off panels you do not need. For example, Cmd+1 to hide the sidebar and Cmd+2 to hide the quest log gives you a full-width terminal. Cmd+4 on its own gives you a full-width diff viewer.
+**Focused mode.** Toggle off panels you do not need. For example, Cmd+1 to hide the sidebar and Cmd+2 to hide the quest log gives you a full-width terminal. Cmd+3 on its own hides the terminal and gives you a full-height diff viewer.
 
 **Discover shortcuts.** Hold Cmd for a moment to see all panel toggle shortcuts overlaid on the bottom toolbar. This is a quick way to learn the numbers without memorizing them.

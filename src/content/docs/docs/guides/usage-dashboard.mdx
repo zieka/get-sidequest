@@ -3,11 +3,11 @@ title: Usage Dashboard
 description: Track token usage, tool calls, and estimated costs across your sessions.
 ---
 
-The Usage Dashboard gives you a breakdown of how your Claude Code sessions consume tokens, which tools they call, and what it costs. Open it from the sidebar or via the command palette.
+The Usage Dashboard breaks down how your Claude Code sessions consume tokens, which tools and skills they call, and what it costs. Open it from the **Usage Dashboard** button in the bottom toolbar.
+
+It reads Claude Code's own transcripts from `~/.claude/projects`, from `CLAUDE_CONFIG_DIR` if you set one, and from every [profile](/get-sidequest/docs/guides/agents-and-models/#claude-account-profiles) you have added. While it scans, a progress bar reports **Analyzing N of M sessions…**; results are cached so later opens are fast. Quests on other agents are not included.
 
 ## Tabs
-
-The dashboard is organized into four tabs:
 
 ### Tokens
 
@@ -18,29 +18,33 @@ Shows aggregate token counts across all sessions:
 - **Cache write tokens** -- Tokens written to prompt cache
 - **Cache read tokens** -- Tokens served from prompt cache
 
-A per-project breakdown table shows how token usage is distributed across your projects.
+A **By Project** table shows how usage is distributed across your projects.
 
 ### Tools
 
-Displays tool usage metrics with a sortable table and stacked bar visualization:
+Displays tool usage with a sortable table and stacked bars:
 
 - **Count** -- How many times each tool was called
-- **Duration** -- Total execution time per tool
+- **Time** -- Total execution time per tool
 - **Tokens** -- Tokens consumed per tool
 - **Cost** -- Estimated cost per tool
 
-Use the sort selector to reorder by any of these dimensions. Bar charts are colored by model to show which models drive which tool usage.
+Bars are stacked by model, and the legend names each model with its version (for example *Opus 4.6*, *Sonnet 5*) so you can tell generations apart.
 
 ### Skills
 
-Same layout as the Tools tab but for Claude Code skill invocations. Shows which skills are used most frequently and how much they cost.
+Same layout as the Tools tab but for Claude Code skill invocations. Shows which skills are used most and how much they cost.
 
 ### Cost Estimator
 
 Estimates your total spend based on token usage and model pricing:
 
-- **Time range** -- Filter by 1 day, 7 days, or all-time.
-- **Per-model pricing** -- Editable price-per-million-tokens for input and output. Defaults are fetched from live pricing data and can be overridden.
-- **Grand total** -- Calculated cost across all models and time ranges.
+- **Time Range** -- 1 day, 1 week or all available. Changing it reloads every tab.
+- **Per-model pricing** -- Editable price per million tokens for each token type. Defaults are fetched from public pricing data with built-in fallbacks.
+- **Subtotal** per model and a **Total Estimated Cost**.
 
-The cost estimator is an approximation based on token counts and published pricing. Actual billing may differ depending on your API plan.
+The cost estimator is an approximation based on token counts and published pricing. Actual billing may differ depending on your plan.
+
+## Live Stats
+
+For the quest you are looking at right now, open the **Live Stats** extension panel (**⌘5** by default). It shows input, output and cache-read tokens, an estimated cost, the quest's **Token budget** bar if it has one, and the same Tools / Skills breakdown for that session only.

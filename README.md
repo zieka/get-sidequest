@@ -16,7 +16,7 @@
 
 ---
 
-Run parallel Claude Code agents, supervise them automatically, and ship faster than ever.
+Run parallel coding agents -- Claude Code, Gemini CLI, Codex CLI, Copilot CLI or OpenCode -- each in its own git worktree, supervise them automatically, and ship faster than ever.
 
 ## Install on macOS
 
@@ -43,3 +43,11 @@ Run parallel Claude Code agents, supervise them automatically, and ship faster t
 1. Go to the [latest release](https://github.com/zieka/get-sidequest/releases/latest)
 2. Download the `.AppImage` file
 3. Make it executable and run: `chmod +x Sidequest_*.AppImage && ./Sidequest_*.AppImage`
+
+## Requirements
+
+- An agent CLI (Claude Code recommended; it also powers supervisors, journals and routing)
+- `tmux` and `git`
+- `gh` for GitHub issues, pull-request badges and Review quests
+
+See the [setup guide](https://zieka.github.io/get-sidequest/docs/getting-started/setup/).

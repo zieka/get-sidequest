@@ -1,0 +1,36 @@
+---
+title: Changes Panel
+description: Review a quest's diff, filter and search changed files, and open them in your editor.
+---
+
+The **Changes** panel (**⌘4**) shows what the active quest has changed. It sits below the terminal in the main panel; drag the divider between them to resize, or hide the terminal (**⌘3**) for a full-height diff.
+
+## Layout
+
+The header offers:
+
+- **Current Changes** / **All Changes** -- uncommitted changes in the worktree, or everything on the quest's branch since it left the base branch.
+- The changed-file count and a **working directory** dropdown with **Open in Editor**, **Open in File Manager**, **Open in Terminal** and **Copy Path**.
+- View mode: **Side-by-side**, **Unified** or **Hunk** (only the changed hunks).
+- Syntax theme: Pierre (default), GitHub, One Dark, Dracula, Vitesse, Catppuccin or Everforest.
+- **Render markdown** for `.md` files, **Refresh** and **Close**.
+
+The defaults for view mode, theme and markdown rendering live in **Settings > Appearance > Diff Viewer**.
+
+On the left, a resizable file tree lists every changed file with its status. Type in **Filter files** to narrow it (Esc clears). Right-click a file for **Open in Editor**, **Open in Finder** and **Open in Terminal**.
+
+In multi-repo projects, paths are prefixed with the child repository name.
+
+## Find in diff
+
+Press **⌘F** (or **Ctrl+F**) while the panel has focus to open the find bar in the top-right corner of the diff:
+
+- Type to highlight matches; the counter shows the current match and total.
+- **Enter** / **Shift+Enter** (or the arrows) step forward and back.
+- **All files** searches every changed file for the term and narrows the file tree to the ones that contain it; a clear button restores the full list.
+- **Esc** closes the find bar.
+
+## Tips
+
+- Each quest card shows `+added −removed` line counts for its branch, so you can spot large diffs without opening them.
+- The panel reads the quest's worktree directly, so changes appear as soon as the agent writes them -- no commit required.

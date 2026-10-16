@@ -35,7 +35,11 @@
   font-display: swap;
 }
 
-/* Starlight theme overrides */
+/* Starlight theme overrides.
+   Starlight's own palette lives in @layer starlight.base; this file is
+   unlayered, so each theme needs its own block here or dark wins everywhere. */
+
+/* Dark mode colors */
 :root {
   --sl-color-accent-low: #1E0A3E;
   --sl-color-accent: #7C3AED;
@@ -52,12 +56,23 @@
   --sl-font-mono: 'Geist Mono', monospace;
 }
 
+/* Light mode colors */
+:root[data-theme='light'] {
+  --sl-color-accent-low: #EDE9FE;
+  --sl-color-accent: #6D28D9;
+  --sl-color-accent-high: #4C1D95;
+  --sl-color-white: #0F0F1A;
+  --sl-color-gray-1: #1E293B;
+  --sl-color-gray-2: #334155;
+  --sl-color-gray-3: #64748B;
+  --sl-color-gray-4: #94A3B8;
+  --sl-color-gray-5: #CBD5E1;
+  --sl-color-gray-6: #E2E8F0;
+  --sl-color-gray-7: #F1F5F9;
+  --sl-color-black: #FFFFFF;
+}
+
 /* Heading font override for Starlight docs */
 :is(h1, h2, h3, h4, h5, h6) {
   font-family: 'Alpha Lyrae', system-ui, sans-serif;
-}
-
-/* Force dark mode as default */
-:root {
-  color-scheme: dark;
 }

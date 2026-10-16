@@ -1,180 +1,171 @@
 ---
 title: Settings
-description: Configure Sidequest preferences, appearance, and behavior.
+description: Configure Sidequest preferences, agents, routing, appearance, storage and behavior.
 ---
 
-Open settings with **Cmd+,** or from the **Sidequest** menu bar > **Settings...**. You can also click the gear icon in the bottom toolbar.
+Open settings with **Cmd+,**, from the **Sidequest** menu bar > **Settings...**, or with the gear icon in the bottom toolbar.
 
-Settings are organized into seven categories via the sidebar navigation.
+Settings are organized into nine categories via the sidebar navigation. Theme and language also have quick toggles in the bottom toolbar.
 
 ## General
 
 ### Language
 
-Set the display language for the application. Supported languages:
-
-| Value | Language |
-|-------|----------|
-| English | English (default) |
-| Francais | French |
-| Espanol | Spanish |
-| Zhongwen | Chinese |
+Set the display language: English (default), Français, Español or 中文. The flag button at the right end of the bottom toolbar cycles languages too.
 
 ### Preferred Editor
 
-The editor used when you click "Open in Editor" from the diff viewer, quest context menu, or command palette.
+The editor used by "Open in Editor" throughout the app and when you click a file path in the terminal or diff viewer.
 
-| Editor | Value |
-|--------|-------|
-| Visual Studio Code | `vscode` (default) |
-| IntelliJ IDEA | `intellij` |
-| Zed | `zed` |
+| Editor | Opens with |
+|--------|------------|
+| Visual Studio Code (default) | `code --goto file:line` |
+| IntelliJ IDEA | `idea --line N file` |
+| Zed | `zed file:line` |
 
 ### Preferred Terminal
 
-The terminal app used when you click "Open in Terminal" from quest or file context menus.
+The terminal app used by "Open in Terminal": Terminal.app (default), iTerm2, Warp, Ghostty, WezTerm or Rio. WezTerm opens a new tab in the running instance. Hold **Option** on any "Open in" menu item to pick a different app for that one action.
 
-| Terminal | Value |
-|----------|-------|
-| Terminal.app | `terminal` (default) |
-| iTerm2 | `iterm2` |
-| Warp | `warp` |
-| Ghostty | `ghostly` |
+On Linux the value is used as a command name, falling back to gnome-terminal, konsole, xfce4-terminal or xterm.
 
 ### Setup Guide
 
-Re-run the first-launch setup wizard at any time. Useful if you skipped steps or need to reconfigure prerequisites like tmux or Claude Code.
+**Run Again** re-runs the first-launch setup wizard. Useful if you skipped steps or need to reconfigure prerequisites like tmux or an agent CLI.
 
 ## Appearance
 
 ### Diff Viewer
 
-Controls how file diffs are displayed in the Changes panel.
+Defaults for the [Changes panel](/get-sidequest/docs/guides/changes-panel/):
 
-**View Mode** -- Choose how diffs are laid out:
+- **View Mode** -- Side by Side (default), Unified or Hunk.
+- **Color Theme** -- Pierre (default), GitHub, One Dark, Dracula, Vitesse, Catppuccin, Everforest.
+- **Render Markdown** -- Render `.md` files with formatting in diff views. On by default.
 
-- **Side by Side** (default) -- Old and new file content shown in parallel columns.
-- **Unified** -- Changes shown inline in a single column.
-- **Hunk** -- Only changed hunks are displayed.
+### Terminal
 
-**Color Theme** -- Syntax highlighting theme for diffs. Options: Pierre (default), GitHub, One Dark, Dracula, Vitesse, Catppuccin, Everforest.
+- **Font Family** -- System default, or any monospace font Sidequest finds installed (Fira Code, MesloLGS, Hack and JetBrains Mono Nerd Fonts, SF Mono, Menlo, Monaco, Cascadia Code, IBM Plex Mono, Source Code Pro). Nerd Fonts render Claude Code's icons best.
+- **Font Size** -- 9--24, default 13. This is the base size before zoom (**Cmd+=** / **Cmd+-**).
+- **Font Weight** -- Light, Regular (default), Medium, Semibold or Bold. A sample line previews the result.
 
-**Render Markdown** -- When enabled, markdown files in diff views are rendered with formatting. Enabled by default.
+Light, dark and system themes are switched from the sun/moon button in the bottom toolbar, not from this page. The embedded terminal always uses a dark palette.
+
+## Agent
+
+### Default Agent
+
+The agent new quests use unless you pick another one in the Create Quest dialog: Claude Code (default), Gemini CLI, Codex CLI, Copilot CLI or OpenCode.
+
+### Claude Profiles
+
+Separate Claude accounts, each with its own configuration directory. Type a **Profile name** and click **Add profile** to log in through an embedded terminal. Each row shows the account's email and plan with **Log in** / **Switch account**, **Refresh** and **Delete**. See [Claude account profiles](/get-sidequest/docs/guides/agents-and-models/#claude-account-profiles).
+
+### Claude Code
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **CLI Path** | auto-detect | Absolute path to `claude` if auto-detection fails. Shows **Detected** or **Not found** |
+| **Chrome Browser Tools** | Disable | Pass `--chrome` so Claude can drive your browser through its Chrome extension |
+| **Auto Mode** | Enable | Use `--permission-mode auto` (classifier-verified auto-approval). Disable to fall back to `--dangerously-skip-permissions` |
+| **Bypass Permissions in Home** | Disable | Only shown when Auto Mode is on. Launch Home quests with `--dangerously-skip-permissions`, since auto mode escalates constantly outside a repository. Grants unrestricted access to your home directory |
+| **Effort Level** | Extra High | Reasoning effort for new Claude Code sessions: Low, Medium, High, Extra High or Max. Quests and the smart router can override it |
+
+### Gemini CLI, Codex CLI, Copilot CLI, OpenCode
+
+A **CLI Path** for each, with the same Detected / Not found indicator. Leave blank to auto-detect.
+
+## Routing
+
+### Smart Routing
+
+- **Enable smart routing** (on by default) -- Automatically choose a model and effort per Claude Code quest. Off uses your Claude default.
+- **Fallback model** -- Haiku, Sonnet (default) or Opus; used when the router fails or times out.
+
+### Routing Rules
+
+**Edit routing rules** opens the rules text with **Save**, **Reset to default** and **Cancel**. Your edits are stored in `~/.sidequest/router-rules.md`. See [Smart Router Rules](/get-sidequest/docs/advanced/router-rules/).
 
 ## Tools
 
 ### System Tools
 
-Override the auto-detected paths for system dependencies. Leave blank to use auto-discovery (recommended). Provide an absolute path only if auto-detection fails or you want a specific version.
-
-| Tool | Setting | Default |
-|------|---------|---------|
-| Git | `gitPath` | Auto-detected |
-| Tmux | `tmuxPath` | Auto-detected |
-
-The auto-discovered path is shown as placeholder text in each field.
+Override the auto-detected paths for **Git** and **Tmux**. The auto-discovered path is shown as placeholder text; leave the field blank to keep it.
 
 ### Tmux Mode
 
-Controls how Sidequest handles mouse and keyboard input in the terminal panel. Changing this setting requires a reload to apply to existing sessions.
+Controls how Sidequest handles mouse and keyboard input in the terminal panel. Changing it prompts you to reload so existing sessions pick it up.
 
 | Mode | Description |
 |------|-------------|
-| **Chill Mode** (default) | Smart handlers give you scroll, click, and drag without needing to know tmux. Best for most users. |
-| **Mouse Mode** | Native tmux mouse mode. You can click panes and scroll, but text selection follows tmux behavior. |
-| **Raw Tmux** | No mouse mode, no training wheels. Pure keyboard-driven tmux experience. |
+| **Chill Mode** (default) | Smart handlers give you scroll, click and drag without needing to know tmux. Best for most users. |
+| **Mouse Mode** | Native tmux mouse mode. You can click panes and scroll, but text selection follows tmux behaviour and the right-click menu is unavailable. |
+| **Raw Tmux** | No mouse mode, no training wheels. Pure keyboard-driven tmux. |
+
+### Tmux Config Recommendations
+
+Shows the three server options Sidequest applies to the running tmux server at startup, with a **Copy snippet** button so you can add them to `~/.tmux.conf` permanently. See [Tmux Configuration](/get-sidequest/docs/advanced/tmux/).
 
 ## Notifications
 
 ### Claude Code Integration
 
-Sidequest can notify you when Claude stops and needs attention in any quest session. This works by installing a Claude Code hook that sends events to Sidequest via IPC.
+Sidequest can notify you when Claude stops and needs attention in any quest session. This works by installing a Claude Code **Stop hook** in `~/.claude/settings.json` (and in each profile) that sends events to Sidequest over its local socket. The same hook powers the **Needs attention** status on quest cards and lets supervisors see what is waiting.
 
 1. Click **Enable** to install the hook.
-2. Once enabled, choose a **notification sound** from the built-in options or import a custom sound file (MP3, WAV, OGG, M4A).
-3. Optionally configure a **custom notification command** -- a shell command that runs whenever a quest needs attention.
-
-Available environment variables for custom commands:
-
-| Variable | Description |
-|----------|-------------|
-| `$SIDEQUEST_PROJECT_NAME` | The project name |
-| `$SIDEQUEST_QUEST_TITLE` | The quest title |
-
-Example:
+2. Choose a **Notification Sound** -- None, Soft Chime (default), Bell, Alert, Ding, Coin, Success, Tone -- or import your own MP3, WAV, OGG or M4A under **Your Sounds**.
+3. Optionally set a **Custom Notification Command** -- a shell command that runs whenever a quest needs attention. `$SIDEQUEST_PROJECT_NAME` and `$SIDEQUEST_QUEST_TITLE` are available:
 
 ```bash
 curl -d "$SIDEQUEST_PROJECT_NAME needs attention" https://example.com/notify
 ```
 
-Use the **Test Command** button to verify your command works before relying on it.
+Use **Test Command** to verify it works before relying on it.
 
-### Custom Sounds
-
-Click the import button next to the sound selector to add your own audio files. Imported sounds appear under "Your Sounds" in the dropdown and can be deleted individually.
-
-Per-project notification sounds can be configured separately from the project context menu in the sidebar.
+Per-project sounds are set in **Project Settings**. The bell button in the bottom toolbar mutes and unmutes sounds without changing these settings.
 
 ## Model Providers
 
-### Claude
+### Council Agent
 
-**CLI Path** -- Path to the Claude Code CLI executable. Defaults to `claude` (assumes it is on your PATH). Set an absolute path if Claude is installed in a non-standard location.
-
-**Effort Level** -- Controls Claude's reasoning effort when starting new sessions. Higher effort means more thorough analysis but may use more tokens.
-
-| Level | Description |
-|-------|-------------|
-| Low | Minimal reasoning |
-| Medium | Balanced |
-| High | Thorough |
-| Max | Maximum reasoning (default) |
-
-**Chrome Browser Tools** -- When enabled, passes `--chrome` to the Claude CLI to enable browser automation via MCP. Disabled by default.
-
-### Gemini CLI
-
-**CLI Path** -- Path to the Gemini CLI executable. Sidequest auto-detects the binary and shows its status (Detected / Not Found). Set an absolute path if auto-detection fails.
-
-Gemini CLI is used by the [Council](/get-sidequest/docs/guides/council/) extension as an alternative agent for second-opinion feedback.
-
-### Codex CLI
-
-Path settings for Codex CLI are shown but currently marked as coming soon.
+Which agent reviews your work when you ask the [Council](/get-sidequest/docs/guides/council/) for feedback: Claude Code (default), Gemini CLI, Codex CLI or Copilot CLI. The selected agent must be installed and authenticated.
 
 ## Extensions
 
-Manage which extension buttons appear in the bottom toolbar. Each extension can be toggled on/off and reordered by dragging.
-
-Built-in extensions:
+**Customize Bottom Bar** -- show, hide and reorder the extension buttons with drag handles and switches. The same dialog opens from right-clicking the bottom toolbar.
 
 | Extension | Description |
 |-----------|-------------|
-| **Live Stats** | Real-time token usage and tool call statistics for the active session. |
-| **Toolkit** | Manage skills, commands, and agents for Claude Code. |
-| **Council** | Get [second-opinion feedback](/get-sidequest/docs/guides/council/) on the current conversation from an alternative AI agent. |
+| **Live Stats** | Real-time token usage, estimated cost, token-budget progress and tool/skill timing for the active session. |
+| **Toolkit** | Manage Claude Code skills, commands and agents. See [Toolkit](/get-sidequest/docs/advanced/toolkit/). |
+| **Council** | Second-opinion review of the current conversation. |
 
-Only one extension panel can be open at a time. Opening one automatically closes any other.
+Only one extension panel can be open at a time; their order sets the **Cmd+5**, **Cmd+6**, **Cmd+7** shortcuts.
 
 ## Storage
 
-### Handoff Retention
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **Handoff Retention** | 30 days | Delete handoff summaries older than this (7, 30, 90 days or never). Cleanup runs on startup and periodically |
+| **Quest Retention** | 2 hours | How long completed quests and their worktrees are kept before cleanup: 1, 2, 4, 8 or 24 hours, or **Disabled (delete immediately)**. Completed quests can be restored during this window |
+| **Confirm before completing** | On | Show the confirmation dialog when completing a quest. The dialog's **Don't ask me again** box turns this off. Always on when retention is disabled |
+| **Journal Retention** | Off (audit by hand) | Archive or delete journals older than 30, 90, 180 or 365 days. Each option shows how many entries it would affect now |
+| **Journal Retention Action** | Archive | Archive moves an entry into its folder's `archive/` subfolder; Delete removes the file. Folders you committed journals into are never touched |
+| **Review old journals** | | Opens the keep-or-kill review. See [Journals](/get-sidequest/docs/guides/journals/#retention) |
 
-Control how long handoff summaries are kept before automatic cleanup. Options: 7 days, 30 days (default), 90 days, or never delete.
+### Worktree Storage
 
-### Orphaned Worktrees
-
-Sidequest scans for worktree directories that are no longer linked to any quest (e.g., left over from deleted quests or crashes). Click **Clean All** to remove them and reclaim disk space.
+Shows how much disk Sidequest's worktrees use and which can be reclaimed. Rows are tagged **Orphaned** (no quest refers to them) or **Completed** (the quest is in Recently Completed). **Reclaim All** or the per-row trash button removes the working copy; a completed quest keeps its branch and commits.
 
 ### Orphaned Tmux Sessions
 
-Similar to orphaned worktrees, Sidequest detects tmux sessions that no longer correspond to active quests. Clean them up to free system resources.
+Lists `sq-` tmux sessions that no longer belong to a quest or supervisor. **Clean All** kills them to free system resources.
 
 ## Import and Export
 
-At the bottom of the settings sidebar, you can:
+At the bottom of the settings sidebar:
 
-- **Export Settings** -- Downloads a `sidequest-settings.json` file with all your non-internal settings.
-- **Import Settings** -- Load settings from a previously exported JSON file.
+- **Export Settings** -- downloads `sidequest-settings.json` with all your non-internal settings.
+- **Import Settings** -- loads settings from a previously exported JSON file.
 
-This is useful for syncing settings across machines or sharing your configuration with teammates. Internal state (like column widths and last active workspace) is excluded from exports.
+Useful for syncing settings across machines or sharing your configuration with teammates. Layout state (panel widths, last active workspace) is excluded from exports.

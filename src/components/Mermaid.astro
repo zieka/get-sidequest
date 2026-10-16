@@ -21,6 +21,10 @@ const { chart } = Astro.props;
   }
 
   function renderDiagrams() {
+    // keep the source so a theme toggle can re-render from it
+    document.querySelectorAll('.mermaid:not([data-original])').forEach((el) => {
+      el.setAttribute('data-original', el.textContent || '');
+    });
     mermaid.initialize({
       startOnLoad: false,
       theme: getTheme(),

@@ -1,3 +1,28 @@
+---
+const items = [
+  'Recurring quest scheduling',
+  'Council second opinion',
+  'Claude, Gemini, Codex, Copilot & OpenCode',
+  'Smart model router',
+  'Multiple Claude accounts',
+  'Per-quest token budgets',
+  'Diff viewer with find',
+  'Context handoffs between quests',
+  'Review quests for pull requests',
+  'GitHub issues & PR badges',
+  'Per-project setup commands',
+  'Keyboard shortcuts & command palette',
+  'Custom extensions & panels',
+  'Cost estimator',
+  'Dark & light modes',
+  'English, French, Spanish & Chinese',
+  'Git log & client operations',
+  'Quick open to editor, terminal & remote',
+  'A CLI your agents can use',
+  'macOS & Linux',
+];
+---
+
 <section class="relative px-6 py-24">
   <div class="mx-auto max-w-5xl">
     <div class="text-center mb-16">
@@ -5,51 +30,11 @@
     </div>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">Recurring quest scheduling</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">Council second opinion</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">Multi-agent support</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">Beautiful code diffs</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">Context handoffs between agents</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">Multi-language support</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">Project preprocessing</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">Keyboard shortcuts</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">Custom extensions &amp; panels</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">Cost estimator</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">Dark &amp; light modes</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">GitHub issues &amp; PR integration</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">Git log &amp; client operations</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">Quick open to editor, terminal &amp; remote</p>
-      </div>
-      <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-        <p class="text-sm text-gray-300">macOS &amp; Linux</p>
-      </div>
+      {items.map((item) => (
+        <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
+          <p class="text-sm text-gray-300">{item}</p>
+        </div>
+      ))}
     </div>
   </div>
 </section>

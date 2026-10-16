@@ -1,18 +1,31 @@
 ---
 title: Setup
-description: Set up Sidequest dependencies including Claude Code CLI, tmux, and git.
+description: Set up Sidequest dependencies including an agent CLI, tmux, git and the GitHub CLI.
 ---
 
-Sidequest requires four command-line tools to function. On first launch, the setup wizard checks each one and offers to install any that are missing.
+Sidequest runs agents you have already installed and logged into on your machine. On first launch the setup wizard checks each dependency and offers to install anything that is missing.
 
 ## Required Dependencies
 
 | Tool | Purpose |
 |------|---------|
-| **Claude Code CLI** | The AI agent that runs inside each quest session |
-| **tmux** | Terminal multiplexer that keeps sessions alive in the background |
-| **git** | Version control -- used for worktrees, branching, and diffs |
-| **GitHub CLI (gh)** | Optional but recommended -- enables issue linking, PR creation, and PR reviews |
+| **Claude Code CLI** | The default agent. Supervisors, journals, Council summaries and the smart router all use it, so install it even if you mostly run other agents. |
+| **tmux** | Terminal multiplexer that keeps every session alive in the background |
+| **git** | Version control -- used for worktrees, branching and diffs |
+| **GitHub CLI (gh)** | Optional but recommended -- enables issue browsing, PR badges, Review quests and cloning private repos |
+
+### Optional agents
+
+Sidequest can run quests on other agents. Install and authenticate whichever you want to use, then point Sidequest at them in **Settings > Agent** if they are not found automatically:
+
+| Agent | Binary | Install |
+|-------|--------|---------|
+| Gemini CLI | `gemini` | `npm install -g @google/gemini-cli` |
+| Codex CLI | `codex` | `npm install -g @openai/codex` |
+| Copilot CLI | `copilot` | `npm install -g @github/copilot` |
+| OpenCode | `opencode` | See [opencode.ai](https://opencode.ai) |
+
+See [Agents and Models](/get-sidequest/docs/guides/agents-and-models/) for what each agent supports inside Sidequest.
 
 ## Installing Dependencies
 
@@ -72,7 +85,9 @@ When you launch Sidequest for the first time, the setup wizard walks you through
 4. If a tool is missing and the prerequisite package manager is available, an **Install** button appears to install it directly
 5. If auto-install is not possible (e.g., npm is not installed), the wizard shows what's needed and provides a **Copy** button for the manual install command
 
-You can skip missing dependencies and continue, but Sidequest will not be able to create sessions without Claude Code CLI and tmux.
+You can skip missing dependencies and continue, but Sidequest cannot create sessions without an agent CLI and tmux.
+
+You can re-run the wizard at any time from **Settings > General > Setup Guide > Run Again**.
 
 ## Path Resolution
 
@@ -86,11 +101,18 @@ If Sidequest can't find a tool (common when launched from Finder on macOS, which
 
 ### Custom Tool Paths
 
-If auto-discovery doesn't find your tools, you can set explicit paths in **Settings**. Open the settings panel and configure custom paths for git, tmux, or Claude Code. Leave a field empty to revert to auto-discovery.
+If auto-discovery doesn't find your tools, set explicit paths in **Settings**: git and tmux under **Tools**, and each agent's CLI under **Agent**. Leave a field empty to revert to auto-discovery. Each agent field shows **Detected** or **Not found** so you can confirm the path works.
+
+## What Sidequest installs for you
+
+On every launch Sidequest refreshes a few files of its own:
+
+- `~/.sidequest/bin/sidequest` and `~/.sidequest/bin/sidequest-journal` -- command-line tools that agents (and you) can use. See [Sidequest CLI](/get-sidequest/docs/advanced/cli/).
+- `~/.claude/skills/sidequest/SKILL.md` and `~/.claude/skills/sidequest-journal/SKILL.md` -- Claude Code skills that teach the agent how to use those tools. They are rewritten at every launch, so edit the extended prompts instead of these files.
+- `~/.sidequest/skills/sidequest-supervisor.md` -- the supervisor's system prompt.
+- A Claude Code **Stop hook** (once you enable notifications in **Settings > Notifications**) so Sidequest knows when a session is waiting for you.
 
 ## Verifying Your Setup
-
-After completing the wizard, you can re-check dependencies at any time by reopening **Settings**. The setup wizard also runs each time you launch Sidequest until all required dependencies are found.
 
 To verify tools are working from your terminal:
 
