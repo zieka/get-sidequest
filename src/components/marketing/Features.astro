@@ -1,73 +1,73 @@
 ---
 import FeatureCard from './FeatureCard.astro';
+import questBoard from '../../assets/screenshots/quest-board.png';
+import supervisor from '../../assets/screenshots/supervisor.png';
+import journals from '../../assets/screenshots/journals.png';
+import terminal from '../../assets/screenshots/terminal.png';
+import activeQuests from '../../assets/screenshots/active-quests.png';
+import createQuest from '../../assets/screenshots/create-quest.png';
+import usageDashboard from '../../assets/screenshots/usage-dashboard.png';
+import supervisorSprite from '../../assets/sprites/supervisor.png';
+import chroniclerSprite from '../../assets/sprites/chronicler.png';
 ---
 
 <section id="features" class="relative px-6 py-24">
   <div class="mx-auto max-w-6xl">
-    <div class="text-center mb-8">
-      <p class="text-sm font-mono text-accent mb-4 tracking-widest uppercase">Features</p>
-    </div>
+    <h2 class="sr-only">Features</h2>
 
     <div class="divide-y divide-white/5">
       <FeatureCard
         headline="Run a team of agents, not just one"
         description="A quest log for every project. Drag quests between backlog and active, and run as many as your machine can hold. Each Worktree quest gets its own isolated git worktree — no merge conflicts, no stepping on toes."
-        screenshotLabel="Quest Log"
-        screenshotDescription="Quest log showing Active and Backlog sections with status, GitHub badges and diff stats on each card"
-        screenshotImage="screenshots/quest-board.png"
+        imageAlt="Quest log showing Active and Backlog sections with status, GitHub badges and diff stats on each card"
+        image={questBoard}
       />
 
       <FeatureCard
         headline="Supervision on autopilot"
         description="Hand quests from any repo to a supervisor: an agent that answers routine prompts, pulls the next quest from its queue when a slot opens, closes finished work against your criteria, and escalates only what needs you. Supervisors can even report to each other."
-        screenshotLabel="Supervisors"
-        screenshotDescription="Supervisors board with an unassigned pool and two supervisor queues"
-        screenshotImage="screenshots/supervisor.png"
+        imageAlt="Supervisors board with an unassigned pool and two supervisor queues"
+        image={supervisor}
         reverse
-        icon="sprites/supervisor.png"
+        icon={supervisorSprite}
       />
 
       <FeatureCard
         headline="Every discovery, documented"
         description="When a quest finishes, the Chronicler writes a journal entry: what was learned, what was decided, and why. Search every entry from one place, commit the good ones to your repo — and new quests read the relevant ones before they start, so your agents stop rediscovering the same things."
-        screenshotLabel="Journals"
-        screenshotDescription="Search all journals modal with recent entries and a rendered entry preview"
-        screenshotImage="screenshots/journals.png"
-        icon="sprites/chronicler.png"
+        imageAlt="Search all journals modal with recent entries and a rendered entry preview"
+        image={journals}
+        icon={chroniclerSprite}
       />
 
       <FeatureCard
         headline="The real CLI, zero context switching"
         description="An embedded terminal running the actual agent — not a chat wrapper. tmux keeps every session alive across restarts; Sidequest's chill mode gives you scroll, click and drag without learning tmux. Switch between quests instantly, all in one window."
-        screenshotLabel="Terminal"
-        screenshotDescription="Terminal panel with a Claude Code session and the Sidequest quest context header"
-        screenshotImage="screenshots/terminal.png"
+        imageAlt="Terminal panel with a Claude Code session and the Sidequest quest context header"
+        image={terminal}
         reverse
       />
 
       <FeatureCard
         headline="See everything that's running"
         description="One timeline of every active quest across all your projects: how long each has been running, and which ones have gone quiet and need a nudge."
-        screenshotLabel="Active Quests"
-        screenshotDescription="Active quests timeline across projects with age and staleness markers"
-        screenshotImage="screenshots/active-quests.png"
+        imageAlt="Active quests timeline across projects with age and staleness markers"
+        image={activeQuests}
       />
 
       <FeatureCard
         headline="Any agent, any model"
         description="Run each quest on Claude Code, Gemini CLI, Codex CLI, Copilot CLI or OpenCode. Pick a model and effort per quest, or let the smart router read the task and choose. Keep separate Claude accounts side by side with profiles."
-        screenshotLabel="Create Quest"
-        screenshotDescription="Create Quest dialog with type, base branch, prompt, token budget and agent fields"
-        screenshotImage="screenshots/create-quest.png"
+        imageAlt="Create Quest dialog with type, base branch, prompt, token budget and agent fields"
+        image={createQuest}
         reverse
       />
 
       <FeatureCard
         headline="Know what you're spending"
         description="Token usage, tool and skill timing, and cost estimates across every project and account — with per-quest token budgets when you want a hard stop."
-        screenshotLabel="Usage Dashboard"
-        screenshotDescription="Usage dashboard showing token breakdown and a per-project table"
-        screenshotImage="screenshots/usage-dashboard.png"
+        imageAlt="Usage dashboard showing token breakdown and a per-project table"
+        image={usageDashboard}
       />
     </div>
   </div>

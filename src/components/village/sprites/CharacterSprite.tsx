@@ -22,8 +22,8 @@ export function CharacterSprite({
   const baseY = position[1];
 
   const texture = useLoader(THREE.TextureLoader, texturePath);
+  // Sprites render ~15px tall: mipmaps keep the downscale clean, Nearest keeps any upscale crisp
   texture.magFilter = THREE.NearestFilter;
-  texture.minFilter = THREE.NearestFilter;
 
   useFrame((state) => {
     if (groupRef.current) {

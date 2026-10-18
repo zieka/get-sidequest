@@ -1,3 +1,63 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* The Starlight Tailwind plugin turns Preflight off for the whole site; marketing pages restore
+   the parts they rely on. Docs keep Starlight's own reset (this file is not in customCss). */
+@layer base {
+  *, ::before, ::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body,
+  h1, h2, h3, h4, h5, h6,
+  p, figure, blockquote {
+    margin: 0;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+
+  ul, ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  img, svg, video, canvas {
+    display: block;
+    max-width: 100%;
+  }
+
+  img, video {
+    height: auto;
+  }
+
+  ::selection {
+    background-color: theme('colors.accent.600');
+    color: theme('colors.white');
+  }
+
+  :focus-visible {
+    outline: 2px solid theme('colors.accent.300');
+    outline-offset: 3px;
+  }
+}

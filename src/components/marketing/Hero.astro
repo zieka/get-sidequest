@@ -1,20 +1,47 @@
 ---
+import { getImage } from 'astro:assets';
 import VillageCanvas from '../village/VillageCanvas';
+import backdrop from '../../assets/village/background.png';
+import supervisor from '../../assets/sprites/supervisor.png';
+import chronicler from '../../assets/sprites/chronicler.png';
+import courier from '../../assets/sprites/courier.png';
+
 const base = import.meta.env.BASE_URL;
 const downloadUrl = "https://github.com/zieka/get-sidequest/releases/latest";
 const docsUrl = `${base}docs/`;
+
+// Same URL for the poster and the WebGL texture, so the scene reuses the cached file
+const poster = await getImage({ src: backdrop, format: 'webp', quality: 80 });
+const sprite = async (src: ImageMetadata) => (await getImage({ src, width: 128, format: 'webp' })).src;
+const assets = {
+  backdrop: poster.src,
+  supervisor: await sprite(supervisor),
+  chronicler: await sprite(chronicler),
+  courier: await sprite(courier),
+};
 ---
 
-<section class="relative overflow-hidden h-screen min-h-[600px] max-h-[900px]">
-  <!-- Three.js Canvas -->
-  <VillageCanvas client:only="react" />
+<section class="relative overflow-hidden h-screen min-h-[600px] max-h-[900px] bg-background">
+  <!-- First paint, phones and reduced motion; the WebGL scene fades in over it on desktop -->
+  <img
+    src={poster.src}
+    width={backdrop.width}
+    height={backdrop.height}
+    alt=""
+    loading="eager"
+    fetchpriority="high"
+    decoding="async"
+    class="hero-poster"
+  />
+
+  <VillageCanvas client:only="react" assets={assets} />
 
   <!-- Dark gradient overlay for text readability -->
   <div class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent pointer-events-none"></div>
 
   <!-- Text overlay -->
   <div class="relative z-10 flex flex-col items-center justify-center h-full px-6 text-center">
-    <h1 class="text-4xl md:text-6xl tracking-tight leading-[1.3] mb-6 hero-text" style="font-family: 'Pentiment Printed', serif;">
+    <h1 class="font-display text-4xl md:text-6xl tracking-tight leading-[1.3] mb-6 hero-text">
       Your main quest is always running.<br />
       But every great adventure needs
       <span class="font-heading">sidequests.</span>
@@ -25,7 +52,7 @@ const docsUrl = `${base}docs/`;
     </p>
 
     <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-      <a href={downloadUrl} class="inline-flex items-center px-6 py-3 rounded-xl text-base font-medium text-white bg-gradient-to-r from-accent to-cyan-400 hover:opacity-90 transition-opacity shadow-lg shadow-accent/25">
+      <a href={downloadUrl} class="inline-flex items-center px-6 py-3 rounded-xl text-base font-medium text-white bg-gradient-to-r from-brand-pink to-brand-magenta hover:opacity-90 transition-opacity shadow-brand">
         Download for macOS &amp; Linux
       </a>
       <a href={docsUrl} class="inline-flex items-center px-6 py-3 rounded-xl text-base font-medium text-gray-300 border border-white/10 hover:border-white/20 hover:text-white transition-all">
@@ -38,5 +65,23 @@ const docsUrl = `${base}docs/`;
 <style>
   .hero-text {
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 4px 24px rgba(0, 0, 0, 0.6);
+  }
+
+  .hero-poster {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: auto;
+    max-width: none;
+    height: 100%;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Matches the WebGL framing in Backdrop.tsx: 1.273× zoom, growing past ~2.2:1 to cover the
+     width plus camera truck (3 units ≈ 10.91% of hero height; 1.8286 is the plane's aspect) */
+  @media (min-width: 768px) {
+    .hero-poster {
+      height: max(127.3%, calc((100vw + 10.91%) / 1.8286));
+    }
   }
 </style>

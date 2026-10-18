@@ -25,16 +25,15 @@ const items = [
 
 <section class="relative px-6 py-24">
   <div class="mx-auto max-w-5xl">
-    <div class="text-center mb-16">
-      <p class="text-sm font-mono text-accent mb-4 tracking-widest uppercase">And so much more</p>
-    </div>
+    <h2 class="font-heading text-3xl md:text-4xl tracking-tight text-center mb-12">And so much more</h2>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+    <!-- Wrapping flex rather than grid so a short last row centers instead of leaving holes -->
+    <ul class="flex flex-wrap justify-center gap-4">
       {items.map((item) => (
-        <div class="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center hover:border-white/10 transition-colors">
-          <p class="text-sm text-gray-300">{item}</p>
-        </div>
+        <li class="flex items-center justify-center basis-[calc(50%-0.5rem)] sm:basis-[calc(33.333%-0.667rem)] md:basis-[calc(25%-0.75rem)] rounded-xl border border-white/5 bg-white/[0.02] px-4 py-5 text-center text-sm text-gray-300">
+          {item}
+        </li>
       ))}
-    </div>
+    </ul>
   </div>
 </section>
