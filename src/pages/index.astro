@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import MarketingLayout from '../layouts/MarketingLayout.astro';
 import Navbar from '../components/marketing/Navbar.astro';
 import Hero from '../components/marketing/Hero.astro';
@@ -7,6 +8,7 @@ import Features from '../components/marketing/Features.astro';
 import FeatureGrid from '../components/marketing/FeatureGrid.astro';
 import DownloadCTA from '../components/marketing/DownloadCTA.astro';
 import Footer from '../components/marketing/Footer.astro';
+import appScreenshot from '../assets/screenshots/sidequest.png';
 ---
 
 <MarketingLayout
@@ -17,18 +19,18 @@ import Footer from '../components/marketing/Footer.astro';
   <main class="pt-16">
     <Hero />
     <Problem />
-    <section class="relative px-6 pt-24 pb-4">
-      <div class="mx-auto max-w-3xl text-center">
-        <p class="text-sm font-mono text-accent mb-4 tracking-widest uppercase">The solution</p>
-      </div>
-    </section>
-    <section class="relative px-6 pb-24">
+    <section class="relative px-6 pt-8 pb-24">
       <div class="mx-auto max-w-5xl">
-        <div class="relative">
-          <div class="absolute -inset-4 bg-gradient-to-r from-accent/20 to-cyan-400/20 rounded-2xl blur-2xl" />
-          <img src={`${import.meta.env.BASE_URL}screenshots/sidequest.png`} alt="Sidequest" class="relative rounded-xl border border-white/10 shadow-2xl w-full" />
-        </div>
-        <p class="text-center text-sm text-gray-400 mt-6">The next generation of IDE for commanding your agentic team.</p>
+        <h2 class="font-heading text-3xl md:text-4xl tracking-tight text-center text-balance mb-12">
+          The next generation of IDE for commanding your agentic team.
+        </h2>
+        <Image
+          src={appScreenshot}
+          alt="Sidequest window: workspaces sidebar, a quest log of active and backlog quests, and a Claude Code session adding rate limiting to an API endpoint"
+          widths={[640, 1024, 1536, 2048]}
+          sizes="(min-width: 1072px) 1024px, calc(100vw - 48px)"
+          class="rounded-xl border border-white/10 shadow-2xl w-full h-auto"
+        />
       </div>
     </section>
     <Features />

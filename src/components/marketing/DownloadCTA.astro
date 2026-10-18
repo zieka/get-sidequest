@@ -1,11 +1,6 @@
 <section class="relative px-6 py-32 overflow-hidden">
-  <!-- Background glow -->
-  <div class="absolute inset-0 flex items-center justify-center">
-    <div class="w-[600px] h-[400px] bg-accent/10 rounded-full blur-[100px]" />
-  </div>
-
   <!-- Floating pixel art items -->
-  <div class="absolute inset-0 pointer-events-none overflow-hidden">
+  <div class="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
     <div class="absolute top-[15%] left-[10%] w-8 h-8 opacity-20 animate-float-1">
       <svg viewBox="0 0 16 16" class="w-full h-full" style="image-rendering: pixelated;">
         <rect x="7" y="1" width="2" height="12" fill="#c0c0c0"/>
@@ -40,14 +35,14 @@
   <div class="relative mx-auto max-w-3xl text-center">
     <h2 class="font-heading text-4xl md:text-5xl tracking-tight mb-6">
       Ready to run your
-      <span class="bg-gradient-to-r from-accent to-cyan-400 bg-clip-text text-transparent">sidequest?</span>
+      <span class="font-display">sidequest?</span>
     </h2>
     <p class="text-lg text-gray-400 mb-10">
       Download Sidequest for macOS or Linux and start orchestrating your AI development team.
     </p>
     <a
       href="https://github.com/zieka/get-sidequest/releases/latest"
-      class="inline-flex items-center px-8 py-4 rounded-xl text-lg font-medium text-white bg-gradient-to-r from-accent to-cyan-400 hover:opacity-90 transition-opacity shadow-lg shadow-accent/25"
+      class="inline-flex items-center px-8 py-4 rounded-xl text-lg font-medium text-white bg-gradient-to-r from-brand-pink to-brand-magenta hover:opacity-90 transition-opacity shadow-brand"
     >
       Download for macOS &amp; Linux
     </a>
@@ -75,4 +70,8 @@
   .animate-float-2 { animation: float-2 5s ease-in-out infinite 0.5s; }
   .animate-float-3 { animation: float-3 4.5s ease-in-out infinite 1s; }
   .animate-float-4 { animation: float-4 5.5s ease-in-out infinite 1.5s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-float-1, .animate-float-2, .animate-float-3, .animate-float-4 { animation: none; }
+  }
 </style>

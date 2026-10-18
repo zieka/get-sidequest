@@ -36,8 +36,8 @@ bun shoot.mjs usage-dashboard.png $C "$Q" --sel '[title="Usage Dashboard"]' --cr
 bun shoot.mjs create-quest.png $C "$Q" --sel '[aria-label="Add quest to Active"]' --crop '[role="dialog"]'
 ```
 
-Then downscale (`sips -Z 2560 hero.png --out ../../public/screenshots/sidequest.png`,
-`sips -Z 1600` for the feature images) and copy into `public/screenshots/`.
+Then downscale (`sips -Z 2560 hero.png --out ../../src/assets/screenshots/sidequest.png`,
+`sips -Z 1600` for the feature images) and copy into `src/assets/screenshots/`.
 
 ## Files
 

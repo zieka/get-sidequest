@@ -1,74 +1,80 @@
-import { Canvas } from '@react-three/fiber';
-import { VillageScene } from './VillageScene';
-import { useState, useEffect, Suspense } from 'react';
+import { Component, lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import type { VillageAssets } from './VillageScene';
 
-function VillageFallback() {
-  const hour = new Date().getHours();
-  let variant = 'night';
-  if (hour >= 6 && hour < 9) variant = 'dawn';
-  else if (hour >= 9 && hour < 17) variant = 'day';
-  else if (hour >= 17 && hour < 20) variant = 'dusk';
+// Separate chunk: three.js only downloads where the scene will actually run.
+const VillageScene = lazy(() => import('./VillageScene'));
 
-  // Map time variants to background colors (fallback when images aren't ready)
-  const bgColors: Record<string, string> = {
-    dawn: '#2a1f3d',
-    day: '#1a2a4a',
-    dusk: '#1a1030',
-    night: '#0A0A1F',
-  };
+// Phones, tablets and reduced-motion users keep the static poster from Hero.astro;
+// the scene adds nothing there but motion and battery drain.
+function useSceneAllowed() {
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    const desktop = matchMedia('(min-width: 768px)');
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const touchDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const update = () => setAllowed(desktop.matches && !reduced.matches && !touchDevice);
+    update();
+    desktop.addEventListener('change', update);
+    reduced.addEventListener('change', update);
+    return () => {
+      desktop.removeEventListener('change', update);
+      reduced.removeEventListener('change', update);
+    };
+  }, []);
+
+  return allowed;
+}
+
+function useInView(ref: RefObject<HTMLElement | null>) {
+  const [inView, setInView] = useState(true);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting));
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [ref]);
+
+  return inView;
+}
+
+// No WebGL or a failed chunk load: render nothing and let the poster stand.
+class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+export default function VillageCanvas({ assets }: { assets: VillageAssets }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const allowed = useSceneAllowed();
+  const inView = useInView(ref);
+  const [ready, setReady] = useState(false);
+  const onReady = useCallback(() => setReady(true), []);
+
+  useEffect(() => {
+    if (!allowed) setReady(false);
+  }, [allowed]);
 
   return (
     <div
-      style={{
-        position: 'absolute',
-        inset: 0,
-        width: '100%',
-        height: '100%',
-        backgroundColor: bgColors[variant],
-        backgroundImage: `url(/get-sidequest/village/${variant}.jpg)`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    />
-  );
-}
-
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const check = () => {
-      const mobile =
-        window.innerWidth < 768 ||
-        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      setIsMobile(mobile);
-    };
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-
-  return isMobile;
-}
-
-export default function VillageCanvas() {
-  const isMobile = useIsMobile();
-
-  if (isMobile) return <VillageFallback />;
-
-  return (
-    <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-      <Canvas
-        shadows
-        gl={{ antialias: true, alpha: false }}
-        dpr={[1, 2]}
-        camera={{ fov: 85, position: [0, 0, 10] }}
-        style={{ background: '#0A0A0F' }}
-      >
-        <Suspense fallback={null}>
-          <VillageScene />
-        </Suspense>
-      </Canvas>
+      ref={ref}
+      aria-hidden="true"
+      className="absolute inset-0 transition-opacity duration-700 ease-out"
+      style={{ opacity: ready ? 1 : 0 }}
+    >
+      {allowed && (
+        <SceneBoundary>
+          <Suspense fallback={null}>
+            <VillageScene assets={assets} active={inView} onReady={onReady} />
+          </Suspense>
+        </SceneBoundary>
+      )}
     </div>
   );
 }

@@ -25,10 +25,20 @@ export default {
           400: '#38BDF8',
           500: '#0EA5E9',
         },
+        // App icon's top edge, darkened just enough for white button text (≥4.5:1)
+        brand: {
+          pink: '#D02B8C',
+          magenta: '#B13CB6',
+        },
         surface: '#14141F',
         background: '#0A0A0F',
       },
+      boxShadow: {
+        // Offset pink glow under primary buttons
+        brand: '0 8px 24px -6px rgb(219 47 150 / 0.45)',
+      },
       fontFamily: {
+        display: ['Pentiment Printed', 'serif'],
         heading: ['Alpha Lyrae', 'system-ui', 'sans-serif'],
         body: ['Satoshi', 'system-ui', 'sans-serif'],
         mono: ['Geist Mono', 'monospace'],

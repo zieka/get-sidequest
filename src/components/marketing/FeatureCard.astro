@@ -1,51 +1,51 @@
 ---
+import { Image } from 'astro:assets';
+
 interface Props {
   headline: string;
   description: string;
-  screenshotLabel: string;
-  screenshotDescription: string;
+  image: ImageMetadata;
+  imageAlt: string;
+  icon?: ImageMetadata;
   reverse?: boolean;
-  icon?: string;
-  screenshotImage?: string;
 }
 
-const { headline, description, screenshotLabel, screenshotDescription, reverse = false, icon, screenshotImage } = Astro.props;
-const base = import.meta.env.BASE_URL;
+const { headline, description, image, imageAlt, icon, reverse = false } = Astro.props;
 
-// Text rotates inward toward the screenshot, screenshot rotates inward toward text
-const textRotate = reverse ? 'rotateY(-6deg)' : 'rotateY(6deg)';
-const screenshotRotate = reverse ? 'rotateY(6deg)' : 'rotateY(-6deg)';
+// Text and screenshot tilt toward each other side by side; the stacked mobile layout stays flat
+const textTilt = reverse ? 'md:[transform:rotateY(-6deg)]' : 'md:[transform:rotateY(6deg)]';
+const imageTilt = reverse ? 'md:[transform:rotateY(6deg)]' : 'md:[transform:rotateY(-6deg)]';
+
+// Screenshots are capped at 400px tall and 552px wide (half of max-w-6xl less the gap)
+const naturalWidthAt400 = Math.round((400 * image.width) / image.height);
+const shownWidth = Math.min(552, naturalWidthAt400);
+const widths = [shownWidth, shownWidth * 2].filter((w) => w <= image.width);
+const sizes = `(min-width: 768px) ${shownWidth}px, min(${naturalWidthAt400}px, calc(100vw - 48px))`;
 ---
 
-<div class={`flex flex-col ${reverse ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-12 py-16`} style="perspective: 1200px;">
+<div class={`flex flex-col ${reverse ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-12 py-16 md:[perspective:1200px]`}>
   <!-- Text -->
-  <div class="flex-1 text-center md:text-left" style={`transform: ${textRotate}; transform-style: preserve-3d;`}>
+  <div class={`flex-1 min-w-0 text-center md:text-left ${textTilt}`}>
     <div class="flex items-center gap-3 justify-center md:justify-start mb-4">
-      {icon && !reverse && <img src={`${base}${icon}`} alt="" class="w-10 h-10" style="image-rendering: pixelated;" />}
+      {icon && !reverse && (
+        <Image src={icon} alt="" width={40} densities={[1, 2]} class="h-10 w-auto" style="image-rendering: pixelated;" />
+      )}
       <h3 class="font-heading text-2xl md:text-3xl tracking-tight">{headline}</h3>
-      {icon && reverse && <img src={`${base}${icon}`} alt="" class="w-10 h-10" style="image-rendering: pixelated; transform: scaleX(-1);" />}
+      {icon && reverse && (
+        <Image src={icon} alt="" width={40} densities={[1, 2]} class="h-10 w-auto -scale-x-100" style="image-rendering: pixelated;" />
+      )}
     </div>
     <p class="text-lg text-gray-400 leading-relaxed">{description}</p>
   </div>
 
   <!-- Screenshot -->
-  <div class="flex-1 flex justify-center" style={`transform: ${screenshotRotate}; transform-style: preserve-3d;`}>
-    {screenshotImage ? (
-      <div class="relative inline-block">
-        <div class="absolute -inset-3 bg-gradient-to-r from-accent/15 to-cyan-400/15 rounded-xl blur-xl" />
-        <img src={`${base}${screenshotImage}`} alt={screenshotLabel} class="relative rounded-xl border border-white/10 shadow-2xl max-h-[400px] w-auto object-contain" />
-      </div>
-    ) : (
-      <div class="relative w-full">
-        <div class="absolute -inset-2 bg-gradient-to-r from-accent/10 to-cyan-400/10 rounded-xl blur-xl" />
-        <div class="relative rounded-xl border border-white/10 bg-surface overflow-hidden">
-          <div class="aspect-[16/10] flex items-center justify-center p-6 text-gray-500 border-2 border-dashed border-white/5 m-3 rounded-lg">
-            <div class="text-center">
-              <p class="text-sm font-mono mb-2">[SCREENSHOT: {screenshotLabel}]</p>
-              <p class="text-xs max-w-sm">{screenshotDescription}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
+  <div class={`flex-1 min-w-0 flex justify-center ${imageTilt}`}>
+    <Image
+      src={image}
+      alt={imageAlt}
+      widths={widths}
+      sizes={sizes}
+      class="rounded-xl border border-white/10 shadow-2xl w-auto h-auto max-w-full max-h-[400px]"
+    />
+  </div>
 </div>
