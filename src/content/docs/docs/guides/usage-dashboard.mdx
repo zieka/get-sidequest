@@ -5,7 +5,7 @@ description: Track token usage, tool calls, and estimated costs across your sess
 
 The Usage Dashboard breaks down how your Claude Code sessions consume tokens, which tools and skills they call, and what it costs. Open it from the **Usage Dashboard** button in the bottom toolbar.
 
-It reads Claude Code's own transcripts from `~/.claude/projects`, from `CLAUDE_CONFIG_DIR` if you set one, and from every [profile](/get-sidequest/docs/guides/agents-and-models/#claude-account-profiles) you have added. While it scans, a progress bar reports **Analyzing N of M sessions…**; results are cached so later opens are fast. Quests on other agents are not included.
+It reads Claude Code's own transcripts, subagent transcripts included, from `~/.claude/projects` (and `~/.config/claude/projects` on Linux), from `CLAUDE_CONFIG_DIR` if you set one, from every [profile](/get-sidequest/docs/guides/agents-and-models/#claude-account-profiles) you have added, and from local copies of quests run on remote machines. Advisor tool calls count too. While it scans, a progress bar reports **Analyzing N of M sessions…**; results are cached so later opens are fast. Quests on other agents are not included.
 
 ## Tabs
 
@@ -40,11 +40,15 @@ Same layout as the Tools tab but for Claude Code skill invocations. Shows which 
 Estimates your total spend based on token usage and model pricing:
 
 - **Time Range** -- 1 day, 1 week or all available. Changing it reloads every tab.
-- **Per-model pricing** -- Editable price per million tokens for each token type. Defaults are fetched from public pricing data with built-in fallbacks.
+- **Per-model pricing** -- Editable price per million tokens for **Input**, **Output**, **Cache Write (5m)**, **Cache Write (1h)** and **Cache Read**. Defaults are fetched from public pricing data with built-in fallbacks.
 - **Subtotal** per model and a **Total Estimated Cost**.
 
 The cost estimator is an approximation based on token counts and published pricing. Actual billing may differ depending on your plan.
 
 ## Live Stats
 
-For the quest you are looking at right now, open the **Live Stats** extension panel (**⌘5** by default). It shows input, output and cache-read tokens, an estimated cost, the quest's **Token budget** bar if it has one, and the same Tools / Skills breakdown for that session only.
+For the quest you are looking at right now, open the **Live Stats** extension panel (**⌘5** by default). It shows:
+
+- **This run · Claude's /usage** -- the running Claude Code session's cost and time exactly as `/usage` reports them. It appears once Claude has reported, and not for remote quests.
+- **Quest total · since** *date* -- estimated cost and input, output and cache-read tokens across every Claude Code session run in the quest's directory, plus its **Token budget** bar if it has one.
+- The same Tools / Skills breakdown for that quest only.

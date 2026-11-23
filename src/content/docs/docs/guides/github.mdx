@@ -13,6 +13,7 @@ Sidequest talks to GitHub through the `gh` CLI. Install it, run `gh auth login`,
 | Browse open issues and start quests from them | Project menu > **Issues...** |
 | Use issues as quest prompts, one quest per issue or one for all | Create Quest > **GitHub Issues** |
 | Review a pull request in an isolated worktree | Project menu > **Review Pull Request...**, or a **Review** quest |
+| Start a Saga when a pull request or issue opens | A [Saga](/get-sidequest/docs/guides/sagas/)'s Start card > **Starts** > **When a pull request opens** / **When an issue opens** |
 | Issue and pull-request badges on quest cards | Quest log |
 | Images attached to private-repo issues | Issue details |
 
@@ -45,7 +46,7 @@ If GitHub is unreachable or rate-limited, existing badges stay as they were rath
 
 ## Review quests
 
-A Review quest fetches a pull request's head branch into its own worktree and sends the agent `/review <number>` (or your project's **Review Template**). If the PR branch is checked out elsewhere on your machine, the quest checks out the fetched commit detached so your checkout is untouched. See [Quest Types](/get-sidequest/docs/guides/quest-types/#review).
+A Review quest fetches a pull request's head branch into its own worktree and sends the agent `/review <number>` (or the project's or workspace's **Review Template**). If the PR branch is checked out elsewhere on your machine, the quest checks out the fetched commit detached so your checkout is untouched. See [Quest Types](/get-sidequest/docs/guides/quest-types/#review).
 
 ## Opening pull requests
 

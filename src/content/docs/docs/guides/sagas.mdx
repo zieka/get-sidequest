@@ -1,0 +1,239 @@
+---
+title: Sagas
+description: Save an agent workflow as a graph of steps, then run it by hand, on a schedule, or when a pull request or issue opens.
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+
+A **Saga** is a saved workflow: a Start step, the steps that do the work, and an End. Most steps are **Quest** steps -- each creates a quest on the board and waits for it. Other steps branch, wait, ask you, check a value, run a program or start another Saga. The graph fixes the order; the agents decide how to do each step.
+
+Runs are kept in Sidequest's database, so a run survives a restart.
+
+:::note
+Sagas replace recurring quests. Sidequest 0.83 converts each recurring quest into a Saga the first time it starts -- see [Coming from recurring quests](#coming-from-recurring-quests).
+:::
+
+<Mermaid chart={`graph LR
+  S[Start: when a pull request opens] --> R[Quest: review it]
+  R --> C{Condition: approved?}
+  C -->|yes| E1[End]
+  C -->|no| H[Human input: merge anyway?]
+  H -->|out| E2[End]
+  H -->|declined| E3[End]`} />
+
+## Opening Sagas
+
+- Click the **Sagas** button (a route icon) in the bottom bar, between Active Quests and Supervisors. An orange dot means a Saga step is waiting for you; clicking it then opens that run.
+- Click the same icon in the Quest Log header (**Sagas in this project**) to open the list filtered to that project.
+- A quest started by a Saga step shows the Sagas symbol on its card. Click it to open the run on that step.
+
+## The Sagas list
+
+Each Saga is a card showing:
+
+- its cover, name and version: **Draft** (never published), **v1.2.0**, or **v1.2.0, edited** when the draft has unpublished changes;
+- its description, or its steps in run order (steps that run in parallel share a stage, as in "Plan → Frontend, Backend");
+- the projects it works in -- click one to show only that project's Sagas;
+- how it starts (hover a schedule for the next run). **Not starting** means its trigger is failing;
+- its last run (**Never run**, **Running for…**, **Succeeded…**, **Failed…**, **Canceled…**, or **N runs in flight**);
+- an on/off switch, for a published Saga that starts on a schedule or an event;
+- **Run** (the play button) and **More**, with **Choose cover art** and **Delete**.
+
+Above the cards are **Search Sagas**, **Group by** (**Trigger** or **Color**; your choice is kept), a **Projects** filter (**All projects**, one project, or **No project yet**) and **New Saga** (**New Saga in** _project_ while filtered).
+
+Deleting a Saga removes its versions and run history. Quests its runs started stay on the board.
+
+**Choose cover art** offers **Retro graphics**, **Apps** and **General icons** on a **Background** colour, or **Upload an image** that you can zoom and position. Custom colours other Sagas use appear as swatches. The card takes the cover's colour. You can also open the picker from the cover square on the Start step.
+
+## Building a Saga
+
+**New Saga** opens the editor on a starter graph: a **Start** set to **Manual dispatch**, one **Quest** step and an **End**, already wired. The draft saves as you edit, errors and all.
+
+- **Add step** (top left of the canvas) adds any step, or a supervisor.
+- Hover a card to see its actions and a **+** on each exit; **+** adds the next step, already wired. Drag from an exit to another card to wire it by hand.
+- Each card edits its everyday settings in place. Its actions include **Duplicate step** and **Advanced settings**, which opens the rest in the side panel.
+- With no step selected, the side panel shows **Saga settings**: **Description**, **Outputs**, **Projects** and **Supervisors** (which supervisor fills each supervisor card on this machine -- not part of the Saga itself) and **Versions**.
+- The header shows **No issues** or **N issues** (click one to select its step), then **Runs**, **Publish** and **Run**. A Saga with errors can't be run or published.
+
+A Saga has one Start and at least one End. Its graph can't contain a loop.
+
+### Steps
+
+| Step | Exits | What it does |
+|------|-------|--------------|
+| **Quest** | out, error | Creates an active quest and waits for it. The card holds the prompt, agent and model, project, quest type (**Current Branch**, **Worktree**, or **Review** with a **Pull request number**) and **Done when** |
+| **Prompt** | out | Text written once that later Quest steps read as `{{nodes.<id>.output.text}}`, so several quests share one brief. Wiring it into a Quest step with an empty prompt fills that in |
+| **Condition** | yes, no | Takes a route by **What decides the route**, an expression over earlier values |
+| **Wait** | out | Holds the run **For** a duration (`90m`, `1h30m`, `2d 4h`; at most 365 days) or **Until** a time |
+| **Human input** | out, declined, timed out | Asks you **What to ask** in the app, optionally with a **Form** and a **Timeout** |
+| **Guard** | out, error | Checks **What to check** against **Must match** fields, **Rules**, or both; fails listing everything that didn't hold |
+| **Undo** | out, error | A quest that undoes what an earlier Quest step (**Undoes**) did, such as closing the pull request it opened. Its agent is told what that step was asked and reported |
+| **Command** | out, error | Runs one **Program** in a project's checkout, without a shell. **Arguments**, **Environment**, **Timeout** (10 minutes by default, 24 hours at most) and **Output** (text or JSON) are in Advanced settings |
+| **Run Saga** | out, error | Starts the latest published version of a Saga (this one included) and goes on without waiting |
+| **End** | -- | Finishes the run and sets the Saga's outputs. Unfinished steps are canceled; their quests stay open |
+
+A step that fails with something wired to its **error** exit sends the run down that route; otherwise the run fails. A run that reaches no End fails too.
+
+### Quest steps
+
+The quest's prompt is the step's prompt; its title is the step's name unless **Quest title** is set. Advanced settings also hold **Supervisor**, **Effort**, **Token budget**, and for Worktree steps **Base branch** and **Start in plan mode**.
+
+**Done when** decides when the step finishes:
+
+| Option | The step finishes when |
+|--------|------------------------|
+| **Done when its quest is completed** (default) | You or a supervisor completes the quest. Deleting it counts |
+| **Done when its quest starts** | Its agent's session launches |
+| **Done when its agent reports a result** | The agent runs `sidequest saga report` with a result that matches the step's **Result** fields. Sidequest adds the reporting instructions to the prompt |
+
+Only a step that reports gives later steps values to read. Its quest stays on the board after the step finishes; complete it as usual.
+
+Step quests always run on this machine, even in a project set to run on a remote. A Review step's pull request must be open and not from a fork.
+
+**Run step** on a Quest card runs that step of the draft alone, with values you type standing in for what earlier steps would give. A step that reads a Condition, Wait, Command, Guard or Human input result can't run alone: run the whole Saga.
+
+### Inputs, outputs and references
+
+- **Inputs** (select the Start step): what a run is given -- string, integer, number, boolean or JSON fields. Steps read them as `{{input.name}}`.
+- A Quest step's **Result** fields are read later as `{{nodes.<id>.output.<name>}}`; after an **error** exit, `{{nodes.<id>.error.message}}` says why.
+- **Outputs** (Saga settings): what a run gives back. Each End sets them.
+- Text fields that take references have an **Insert** menu listing what is available there.
+
+A value that is exactly one reference keeps its type, so a number stays a number. Write `\{{` for a literal `{{`.
+
+A Condition compares references with literals or each other, using `==`, `!=`, `<`, `<=`, `>`, `>=`, `and`, `or`, `not` and parentheses -- no arithmetic or functions:
+
+```
+{{nodes.review.output.approved}} == true and {{input.pullRequest}} > 0
+```
+
+A Command passes each reference as one whole argument. Sidequest refuses to save a reference handed to `sh -c` and similar, since that would run text such as an issue title as code. Pass values after a literal script instead:
+
+```
+sh -c 'echo "$1"' sh {{input.title}}
+```
+
+## Starting a Saga
+
+Pick **Starts** on the Start card:
+
+| Starts | A run begins | The run is given |
+|--------|--------------|------------------|
+| **Manual dispatch** | When you click **Run** or use `sidequest saga run` | The inputs you fill in |
+| **On a schedule** | At each time the schedule names | Nothing, so the Saga can't have required inputs |
+| **When a pull request opens** | When a pull request opens in a watched project's GitHub repository | `number`, `title`, `url`, `author`, `branch`, `base`, `draft`, `repo` -- whichever the Saga's inputs declare |
+| **When an issue opens** | When an issue opens in a watched project's GitHub repository | `number`, `title`, `url`, `author`, `body`, `labels`, `repo` -- whichever the Saga's inputs declare |
+
+**Run** starts any Saga by hand, whatever its Start says.
+
+A schedule or event starts runs only once the Saga is [published](#versions), and always runs the newest published version: editing the draft, its Start included, changes nothing until you publish. Select the Start step to see what is in effect -- **Run v1.0.0 on its schedule** (or **for each pull request** / **for each issue**) with a switch, the next run, the last start, and **Passed over…** when one was skipped. The card in the list has the same switch. Turning it back on starts from then: anything that came due or opened while it was off is passed over.
+
+### Schedules
+
+The Start card builds the schedule from chips:
+
+- **How often** -- **Hourly**, **Daily**, **Weekdays** (Monday to Friday), **Weekends** (Saturday and Sunday), **Weekly** or **Monthly**. Hourly, Daily, Weekly and Monthly take an **Every** _n_ interval.
+- **on** -- for Weekly, the days.
+- **at** -- the time of day, or the minute past the hour for Hourly, in your local time zone. A schedule made in another zone shows that zone.
+- **Ends** (side panel) -- **Never**, **On a date** or **After a number of runs**.
+
+The card shows **Next run…**. Sidequest checks schedules once a minute:
+
+- After the app was closed or the Mac asleep, a missed schedule runs once, not once per missed time.
+- While a run the schedule started is still open, the next time is passed over. A new Quest step is done when its quest is completed, so a daily Saga holds the next day's run until someone completes the quest, a supervisor closes it, or you cancel the run.
+- **After a number of runs** counts runs actually made, not dates that passed while it was off.
+
+### Pull requests and issues
+
+Sidequest looks for new pull requests or issues once a minute with `gh`, which must be installed and signed in.
+
+- **Watch another project** adds a repository; **Stop watching this project** removes one. A step in a watched project works in the project the pull request or issue opened in.
+- Only ones opened after watching began count. Publishing, turning the switch on or picking another project starts nothing for those already open.
+- Each new one starts a run, at most three a minute per Saga.
+- **Also for draft pull requests** (side panel, on by default). With it off, a draft starts its run when marked ready.
+- Closed or merged ones start nothing.
+
+## Versions
+
+The first publish is **Publish v1.0.0**. After that, **Publish** offers three bumps:
+
+| Choice | Meaning |
+|--------|---------|
+| Patch | A fix. Runs the same way |
+| Minor | Something new. Same inputs and outputs |
+| Major | The inputs or outputs changed |
+
+Publish is off while the Saga has errors (**Fix the issues first**) or nothing changed (**Nothing changed since the last version**). A version never changes, and a run is pinned to what it started on, so editing or publishing never touches a run in flight.
+
+| Started from | Runs |
+|--------------|------|
+| **Run** in the app | The newest version if the draft has no unpublished changes, otherwise the draft. The run form says which |
+| A schedule or event | The newest published version |
+| `sidequest saga run` | The newest published version; `--draft` or `--version` picks another |
+| A Run Saga step | The newest published version |
+
+## Running and inspecting runs
+
+Click **Run** on a card or in the editor. A Saga with inputs asks for them first (**Start run**). The run opens on its graph, each step marked **Not started**, **Waiting for its agent**, **Done**, **Failed**, **Skipped** or **Canceled**. A waiting card says what it waits on, such as **Waiting for you** or **Waiting until…**.
+
+The run panel shows the run's status, what started it (its schedule, a pull request, an issue or another Saga), **Waiting on…**, the **Result** and a **History** of events. Select a step to see what it was **Given** and what it **Reported**, with **Open its quest** (or **Open its run** for a Run Saga step).
+
+- **Runs** in the editor header lists past runs.
+- **Cancel run** stops the run; its quests stay as they are.
+- **Back to editing** returns to the draft.
+- **Report by hand** is for an agent that finished without reporting: paste the result (**Report result**) or say why it couldn't be done (**Report as failed**).
+- If a step's agent session isn't running (after a reboot, say), the step keeps waiting. Open its quest to start the agent again.
+
+### Human input
+
+When a run reaches a Human input step, the Sagas button shows an orange dot and a notification says which Saga needs you. The run panel shows the question, any form, **Approve**, and **Decline** with an optional reason. Values that don't fit the form are refused. Only the app answers -- there is no CLI for it, so an agent can't approve its own work.
+
+## Supervisors in Sagas
+
+- **Add step** > **Add supervisor** puts a supervisor card on the canvas. Pick who fills it (or **+ New supervisor**), then wire it to a Quest step -- or pick it under **Supervisor** in the step's Advanced settings.
+- The card shows what that supervisor tends and its rules. The rules are the supervisor's own: changing them here changes it everywhere it works, and some lock while it runs.
+- A supervised step's quest starts at once; it doesn't wait in the supervisor's queue.
+- With no supervisor on the card, or one that was deleted, the step runs unsupervised, and the step and run say so.
+- A running supervisor stays up while it is wired into a Saga whose trigger is on.
+
+See [Supervisors](/get-sidequest/docs/guides/supervisors/).
+
+## Command line
+
+```bash
+sidequest saga list                                # each Saga and what starts it
+sidequest saga run 'Code review' --input '{"pullRequest": 12}'
+sidequest saga status 3f2a9c1e                     # a run, its steps and their quests
+sidequest saga cancel 3f2a9c1e
+sidequest saga trigger 'Nightly triage' --enabled off
+sidequest saga report --result '{"approved": true}'   # from a step's quest
+```
+
+See the [CLI reference](/get-sidequest/docs/advanced/cli/) for every option.
+
+## Coming from recurring quests
+
+Recurring quests are retired. The first time Sidequest 0.83 starts, it turns each recurring quest into a Saga, once, and a notice offers **Open Sagas**. The Sagas list explains what happened to each until you dismiss it.
+
+- One that was on is published and keeps running on its schedule.
+- One that was off, or whose schedule had ended, becomes a draft, which runs nothing until you publish it.
+- One whose project was deleted is retired without a Saga.
+- One that can't be converted is retried at each start; its schedule is stopped meanwhile.
+
+Each becomes a Start **On a schedule** with the same rule, wired to one Quest step with the old project, prompt, type, model and effort, titled with the old name.
+
+| Recurring quest | Saga |
+|-----------------|------|
+| **Run now** | **Run** |
+| Enable switch | The switch on the Saga's card |
+| **History** | **Runs** |
+| **After N runs** | Keeps the runs it had left |
+| Previous run still open: skipped | Same: the occurrence is passed over |
+| Supervisor queue | The quest starts at once, supervised |
+| **Context projects** | Dropped: Saga quests take none |
+| **Journal each run** off | Saga quests are journaled like any quest |
+| Remote project | Step quests run on this machine |
+
+The converted Quest step is done when its agent reports a `summary`, and runs on Claude Code. Until the agent reports (or you use **Report by hand**), the run stays open and later times are passed over.
+
+`sidequest recurring` now exits with an error pointing at `sidequest saga`.

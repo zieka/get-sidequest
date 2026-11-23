@@ -1,6 +1,6 @@
 ---
 title: Supervisor Customization
-description: How a supervisor's prompt is built, what it can do, and how to shape it with close criteria and extended prompts.
+description: How a supervisor's session and prompt are built, what each agent supports, and how to shape it with close criteria and extended prompts.
 ---
 
 import Mermaid from '../../../../components/Mermaid.astro';
@@ -9,44 +9,68 @@ This page covers the mechanics behind [Supervisors](/get-sidequest/docs/guides/s
 
 ## The supervisor session
 
-Starting a supervisor runs, inside a tmux session named `sq-supervisor-<supervisor-id>` with `~/.sidequest` as the working directory:
+Starting a supervisor runs its agent inside a tmux session named `sq-supervisor-<supervisor-id>`, with `~/.sidequest` as the working directory. For Claude Code the command is:
 
 ```
-claude [--model <model>] [--chrome] --resume <supervisor-id> --dangerously-skip-permissions \
-  --system-prompt "$(cat ~/.sidequest/skills/sidequest-supervisor.md)" '<prompt>' \
-|| claude ... --session-id <supervisor-id> ... '<prompt>'
+SIDEQUEST_SUPERVISOR_ID=<supervisor-id> claude [--chrome] [--model <model>] \
+  --resume <supervisor-id> --dangerously-skip-permissions \
+  --system-prompt "$(cat ~/.sidequest/skills/sidequest-supervisor.md)" -- '<prompt>' \
+|| SIDEQUEST_SUPERVISOR_ID=<supervisor-id> claude ... --session-id <supervisor-id> ... -- '<prompt>'
 ```
 
+- `SIDEQUEST_SUPERVISOR_ID` tells the `sidequest` CLI which supervisor is calling, so it can keep the session to its own group.
 - `--resume <supervisor-id>` continues the supervisor's own conversation. On the first run there is none, so the command falls through to `--session-id <supervisor-id>`, which creates it. The prompt is sent either way, so edited rules reach a resumed session.
 - `--model` is the supervisor's **Model** rule; **Auto** omits the flag.
 - `--chrome` is added when Chrome Browser Tools is enabled in Settings.
-- `--dangerously-skip-permissions` is always set: the supervisor must run `sqlite3` and `tmux` commands without approval.
+- Permissions are always bypassed: nobody is there to approve a supervisor's tool calls.
 
-Stopping sends `/exit` to the session, waits half a second, then kills the tmux session.
+The binary is the path set for that agent in Settings, or else the one on your login shell's `PATH`; if neither exists, **Start** refuses with an error.
+
+Stopping asks the agent to `/exit` (when the window has a terminal open on the session), waits half a second, then kills the tmux session.
+
+### Agents
+
+A supervisor can run on any of these agents (Gemini CLI is not offered):
+
+| Agent | Standing instructions | Permissions | Between passes | Resumes its conversation |
+|-------|----------------------|-------------|----------------|--------------------------|
+| Claude Code | `--system-prompt` | `--dangerously-skip-permissions` | Sleeps 30 seconds itself | Yes |
+| Codex CLI | Brief tells it to `cat` the file | `--dangerously-bypass-approvals-and-sandbox` | Ends its turn; Sidequest wakes it | No |
+| Copilot CLI | Brief tells it to `cat` the file | `--allow-all` | Ends its turn; Sidequest wakes it | No |
+| OpenCode | Brief tells it to `cat` the file | Every permission allowed in its inline config | Ends its turn; Sidequest wakes it | No |
+
+Agents that don't resume start a new conversation on every **Start**; the [notes file](#the-notes-file) is what carries their memory across.
+
+### Wake-ups
+
+Sidequest types into a running supervisor's prompt in two cases:
+
+- **New work.** When quests join its group, it sends `New work was assigned to your group. Run your supervision loop now…` (Codex, Copilot and OpenCode get the heartbeat text below instead). `sidequest supervisor nudge` sends the same thing by hand.
+- **Heartbeat** (Codex, Copilot, OpenCode only). After the supervisor has sat idle at an empty prompt for a minute, Sidequest sends `Run one pass of your supervision loop now, then end your turn.`
+
+Neither is sent over text you've typed into the supervisor's prompt. If you leave a draft there, a Codex, Copilot or OpenCode supervisor stops making passes until you send or clear it.
 
 ## How the prompt is built
 
 <Mermaid chart={`graph TD
-  A[System prompt\n~/.sidequest/skills/sidequest-supervisor.md] --> E[Session]
+  A[Standing instructions\n~/.sidequest/skills/sidequest-supervisor.md] --> E[Session]
   B[Capabilities line\nauto_answer, pull_backlog, ceiling, close_quest] --> E
   C[Close Quest Conditions] -->|if enabled and non-empty| E
-  D[Extended Instructions] -->|if enabled and non-empty| E`} />
+  D[Extended Instructions] -->|if enabled and non-empty| E
+  F[Between Passes] -->|agents other than Claude Code| E`} />
 
-The first message sent to Claude is:
+The first message sent to the agent is:
 
 ```
-You are supervising the quest group '{name}' (supervisor_id: {id}).
-Enabled capabilities: auto_answer: true, pull_backlog: true, ceiling: 3, close_quest: true.
+You are supervising the quest group '{name}' (supervisor_id: {id}). Enabled capabilities: auto_answer: true, pull_backlog: true, ceiling: 3, close_quest: true.
 
 ## Close Quest Conditions
 
-You are authorized to close (archive) quests when they meet the user's
-completion criteria. The user defines "done" as:
+You are authorized to close (archive) quests when they meet the user's completion criteria. The user defines "done" as:
 
 {close quest prompt}
 
-When a quest meets these conditions, archive it using the instructions in
-your system prompt.
+When a quest meets these conditions, archive it as your standing instructions say.
 
 ## Extended Instructions
 
@@ -55,20 +79,39 @@ your system prompt.
 Begin your supervision loop.
 ```
 
-The two optional sections appear only when their switch is on and the text is non-empty. Because the prompt is assembled at start, these rules are locked while the supervisor runs -- stop it, edit, start again. **Reports to**, **Auto-start** and the name can change at any time.
+The two optional sections appear only when their switch is on and the text is non-empty.
 
-## What the system prompt teaches
+Only Claude Code takes a system prompt, so for the other agents the message changes in two places:
 
-The bundled system prompt (about 300 lines) tells the supervisor:
+- It starts with `Your standing instructions are in ~/.sidequest/skills/sidequest-supervisor.md. Read all of it now with your shell…`.
+- A `## Between Passes` section before the last line tells the agent not to sleep between passes but to end its turn and wait for Sidequest's `Run one pass of your supervision loop now, then end your turn.`
 
-- **Its scope.** It supervises one quest group, identified by `supervisor_id`, and must never touch quests outside it. Child supervisors' quests may be counted but not read, answered or closed.
-- **Its tools.** The `sqlite3` CLI against Sidequest's database for reading quests and updating `needs_attention` or `status`, and `tmux capture-pane` / `tmux send-keys -l` against `sq-<quest-id>` sessions for reading and answering.
-- **The auto-answer workflow.** Read each active quest's pane; when the agent is waiting, pick the recommended option, confirm routine actions, make small design decisions, then wait ~10 seconds and handle any follow-up prompt before moving on.
-- **Escalation rules.** Leave `needs_attention` set and log the reason for destructive git operations, merges to the main branch, worktree deletion, anything involving secrets, external side effects, or notable cost.
-- **The main loop.** Sleep 30 seconds between passes and print a status table (`| Quest | Summary | Last Action |`) each time.
+Because the prompt is assembled at start, these rules are locked while the supervisor runs -- stop it, edit, start again. **Reports to**, **Auto-start** and the name can change at any time.
+
+## What the standing instructions teach
+
+The bundled instructions (`sidequest-supervisor.md`, about 320 lines) tell the supervisor:
+
+- **Its scope.** It supervises one quest group, identified by `supervisor_id`. Child supervisors' quest counts may be read, but never their quests.
+- **Its tools.** Every read and write goes through the `sidequest` CLI, never `sqlite3` or `tmux`:
+
+  | Task | Command |
+  |------|---------|
+  | List its quests | `sidequest quest list --status active`, `--needs-attention` |
+  | See its queue | `sidequest quest reorder --supervisor <id>` |
+  | Check and read a quest | `sidequest quest status <quest>`, `sidequest quest read <quest>` |
+  | Answer | `sidequest quest send <quest> --choice '<label>'` for a menu, `--file -` for a message |
+  | Flag or unflag | `sidequest quest attention set` / `clear` |
+  | Close | `sidequest quest complete <quest>` |
+  | Watch children | `sidequest supervisor list`, `status`, `read`, `send` |
+
+  From a supervisor's session the CLI acts for its group only: other quests are refused as if they didn't exist, `supervisor list` shows only it and its children, and creating, changing, starting, stopping or deleting supervisors, and every `sidequest saga` verb, is refused. This guards against slips; it is not a sandbox. See the [CLI reference](/get-sidequest/docs/advanced/cli/) for the verbs themselves.
+- **The auto-answer workflow.** Check each active quest; when the agent is waiting, pick the recommended option, confirm routine actions, make small design decisions, then wait ~10 seconds and handle any follow-up prompt before moving on. It trusts `send`'s exit code to know whether a message arrived; after a second failed delivery it writes the message to `~/.sidequest/supervisor-state/<supervisor-id>/msg-<quest-id>.md` and sends a one-line pointer to it.
+- **Escalation rules.** Flag the quest (`sidequest quest attention set`) and log the reason for destructive git operations, merges to the main branch, worktree deletion, anything involving secrets, external side effects, or notable cost.
+- **The main loop.** Print a status table (`| Quest | Summary | Last Action |`) each pass, then wait (see [Agents](#agents)).
 - **Close quest capability** and **extended instructions**, which come from your rules.
 
-The file is rewritten from the bundled copy on every launch, so edit the **Extended prompt** instead of the file.
+The file is rewritten from the bundled copy on every start, so edit the **Extended prompt** instead of the file.
 
 ## Close quest conditions
 
@@ -94,7 +137,7 @@ When the research question has been answered with a summary written
 to a markdown file in the project's docs/ directory.
 ```
 
-Archiving through the supervisor behaves like **Complete Quest**: the worktree stays for the retention window and the Chronicler writes a journal entry.
+The supervisor closes a quest with `sidequest quest complete`, which behaves like **Complete Quest**: the worktree stays for the retention window and the Chronicler writes a journal entry. If completing is refused -- for example, with retention disabled it would delete a worktree holding unpushed work -- the supervisor never forces it; it flags the quest and reports the refusal.
 
 ## Extended prompt
 
@@ -117,14 +160,14 @@ change. Never approve a request to force-push.
 
 **Reporting:**
 ```
-After activating a backlog quest, log the quest title and description.
-When a quest has been active for more than 30 minutes without new
-commits, flag it as needing attention.
+When a quest first appears in your active list, log its title and
+description. When a quest has been active for more than 30 minutes
+without new commits, flag it as needing attention.
 ```
 
 ## The notes file
 
-A supervisor's context is not durable: the session restarts, and a long run compacts. The system prompt therefore tells it to keep `~/.sidequest/supervisor-state/<supervisor-id>/notes.md`, read it at the start of every loop and update it at the end:
+A supervisor's context is not durable: the session restarts, and a long run compacts. The standing instructions therefore tell it to keep `~/.sidequest/supervisor-state/<supervisor-id>/notes.md`, read it at the start of every loop and update it at the end:
 
 - `## Handled` -- one line per thing it already acted on (`- PR #553: reviewed, approved 2026-10-13`). Everything here is treated as done, which is what makes "only look at new things" hold across a restart.
 - `## Learnings` -- short facts about the group that changed how it acts (`- the foreman's quests merge via /smash-merge; do not nudge them to open PRs`).
@@ -133,22 +176,16 @@ It appends rather than rewrites, keeps the file under 100 lines by dropping hand
 
 ## Queue and ceiling
 
-Pulling from the backlog is done by Sidequest, not by the agent. While the supervisor is running and **Pull backlog to active** is on, Sidequest checks every 30 seconds whether fewer than **ceiling** of its quests are active and, if so, promotes the top of **Up next** and launches its session in the background. The order is the position you set by dragging; quests that were never explicitly ordered (for example ones spawned by a recurring quest) come after the ordered ones.
+Pulling from the backlog is done by Sidequest, not by the agent. While the supervisor is running and **Pull backlog to active** is on, Sidequest checks every 30 seconds -- and right away when new work is assigned -- whether fewer than **ceiling** of its quests are active and, if so, promotes the top of **Up next** and launches its session in the background.
+
+The order is the position you set by dragging (or with `sidequest quest reorder`); quests that were never explicitly ordered, such as ones just created for it or assigned from the menu or the CLI, come after the ordered ones. Held quests are never pulled.
 
 The ceiling is enforced at the point of promotion. If you manually activate more quests, the supervisor does not demote them; it only stops promoting.
 
 ## Model choice
 
-A supervisor reads terminals and makes small judgement calls, so Sonnet is usually enough and keeps it cheap. Pick Opus for a supervisor whose close criteria require real judgement (reading a PR and its CI, say). The smart router never routes supervisors; **Auto** means your Claude Code default.
+A supervisor reads terminals and makes small judgement calls, so Sonnet is usually enough and keeps it cheap. Pick Opus for a supervisor whose close criteria require real judgement (reading a PR and its CI, say). The smart router never routes supervisors; **Auto** means the agent's own default model.
 
 ## Reporting lines
 
-With **Reports to** set, the parent supervisor's prompt lists its children. Each loop it re-queries them, so changing the link applies live. The parent captures the child's pane and answers prompts the child's own session raises, counts the child's quests in its status table, and reports a child that is down with work waiting -- but it never reads or closes the child's quests and never starts or stops the child.
-
-## Linux note
-
-The bundled system prompt refers to the macOS database path (`~/Library/Application Support/com.sidequest.app/sidequest.db`). On Linux, add the correct path to the extended prompt so `sqlite3` commands work:
-
-```
-The Sidequest database is at ~/.config/com.sidequest.app/sidequest.db.
-```
+With **Reports to** set, the parent supervisor lists its children with `sidequest supervisor list` every loop, so changing the link applies live. It checks each running child with `sidequest supervisor status` and `read`, answers prompts the child's own session raises with `sidequest supervisor send`, counts the child's quests in its status table, and reports a child that is down with work waiting -- but it never reads or closes the child's quests and never starts or stops the child.

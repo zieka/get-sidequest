@@ -23,24 +23,24 @@ See [Quest Types](/get-sidequest/docs/guides/quest-types/) for the full comparis
 
 1. Select a project in the sidebar
 2. Click the **+** next to **Active** to start the quest immediately, or the **+** next to **Backlog** to queue it
-3. In the **Create Quest** dialog:
+3. In the **Create Quest** dialog, settings sit on the left and the prompt on the right (stacked in a narrow window):
    - Choose a **Type**
-   - For **Worktree**: pick a **Base Branch** (defaults to your current branch). Optionally check **Start in plan mode** so the agent proposes changes before executing them
-   - For **Review**: select an open pull request and, if you like, edit the **Review Prompt**
-   - Write a **Prompt** describing the task. Press **Enter** to create, **Shift+Enter** for a new line
+   - For **Worktree**: pick a **Base Branch** (usually `origin/<current branch>`, fetched fresh when the quest starts). Optionally check **Start in plan mode** so the agent proposes changes before executing them
+   - For **Review**: select an open **Pull Request** and, if you like, edit the **Review Prompt**
+   - Write a **Prompt** describing the task. Markdown is styled as you type. Press **Enter** to create, **Shift+Enter** for a new line
 4. Click **Create Quest**
 
 The dialog has more options when you need them:
 
+- **Run on** -- shown under **Type** once you've defined a [remote machine](/get-sidequest/docs/advanced/remote-machines/).
 - **GitHub Issues** -- pick open issues to use as the prompt. With several selected, choose **One quest per issue** or **One quest for all selected issues**.
 - **Add other projects for context** -- list other projects (or any directory via **Browse directory...**) the agent should read for context.
 - **Attach** -- attach images, PDFs, text, Markdown or JSON files. Pasting an image into the prompt attaches it too.
 - **/** in the prompt -- autocompletes your Claude Code skills, commands and agents. Enter inserts `/name` (or `@name` for agents).
-- **Token budget** -- stop the quest at the next turn boundary once it has used this many tokens.
-- **Agent** -- Claude Code, Gemini CLI, Codex CLI, Copilot CLI or OpenCode.
+- **Agent** -- Claude Code, Gemini CLI, Codex CLI, Copilot CLI, OpenCode, or **Shell** for a plain terminal (the prompt becomes an optional **Name** and agent-only options hide).
 - **Claude account** -- shown once you have added a [profile](/get-sidequest/docs/guides/agents-and-models/#claude-account-profiles).
 - **Supervisor** -- preset to the project's default supervisor, if one is set; hand the quest to a [supervisor](/get-sidequest/docs/guides/supervisors/) that answers its prompts and pulls it from the queue.
-- **Model & effort** -- override the smart router's choice. See [Agents and Models](/get-sidequest/docs/guides/agents-and-models/).
+- **Advanced** -- a **Token budget** that stops a Claude Code Worktree or Review quest at the next turn boundary once it has used that many tokens, and **Model** and **Effort** to override the smart router's choice. See [Agents and Models](/get-sidequest/docs/guides/agents-and-models/).
 
 ## Quest Lifecycle
 
@@ -51,7 +51,7 @@ The dialog has more options when you need them:
   C -->|Restore| B
   C -->|Retention expires| D[Pruned]`} />
 
-**Backlog** -- The quest is defined but not running. No session, no worktree yet. Click a backlog quest to edit it, drag it to reorder, or right-click for more.
+**Backlog** -- The quest is defined but not running. Click a backlog quest to edit it (including its agent), drag it to reorder, or right-click for more.
 
 **Active** -- The quest has a live session. For Worktree and Review quests the worktree and branch are created when the quest first starts.
 
@@ -60,7 +60,7 @@ The dialog has more options when you need them:
 - Click **Move to Active** in a backlog quest's menu, or drag it onto the Active section
 - Sidequest creates a tmux session named `sq-<quest-id>`, sets the working directory (worktree, or project root for Current Branch), and launches the agent with your prompt
 - While it starts, the card shows the phase: **Creating worktree...**, **Running setup command...** (if the project has one) and **Routing model...** (if the smart router is on)
-- A Worktree quest begins on a temporary branch named `quest/<id>` and is renamed in the background to a branch name the agent derives from your prompt
+- A Worktree quest begins on a temporary branch named `quest/<id>` and is renamed in the background to a descriptive name generated from the quest's title (see [Quest Types](/get-sidequest/docs/guides/quest-types/#branch-and-base-branch))
 
 ### Reading the cards
 
@@ -74,7 +74,7 @@ Each card shows the title, then one status line prefixed with how long the quest
 | **Ready to close** | The quest's pull request has been merged |
 | **Stale** | No activity for a long while |
 
-On the right you may see a robot (supervised -- click it to open the supervisor board), a clock (spawned by a recurring quest), the type glyph (branch for Current Branch, eye for Review), GitHub issue and PR badges, and `+added −removed` line counts for Worktree quests. Hover a card to read its full prompt; double-click the title to rename it.
+On the right you may see a robot (supervised -- click it to open the supervisor board), a route (a step of a [Saga](/get-sidequest/docs/guides/sagas/) -- click it to open the run), a clock (spawned by a recurring quest from before Sagas), a server (runs on a remote machine), the type glyph (branch for Current Branch, eye for Review), GitHub issue and PR badges, and `+added −removed` line counts for Worktree quests. Hover a card to read its full prompt; double-click the title to rename it.
 
 ### Working With the Terminal
 
@@ -92,15 +92,15 @@ The tmux session persists if you switch to another quest or close the app. When 
 
 ### The quest menu
 
-Right-click a card (or click its **⋯** button) for: **Copy Quest Prompt**, **Open in Editor**, **Open in File Manager**, **Open in Terminal**, **Git Log...**, **Open Remote**, **Move to Active** / **Move to Backlog**, **Add to Supervisor**, **Make Journal Entry**, **Skip Auto-Journal**, **Handoff Quest**, **Restart Session** and **Complete Quest**.
+Right-click a card (or click its **⋯** button) for: **Copy Quest Prompt**, **Open in Editor**, **Open in File Manager**, **Open in Terminal**, **Git Log...**, **Open Remote**, **Move to Active** / **Move to Backlog**, **Add to Supervisor**, **Make Journal Entry**, **Skip Auto-Journal**, **Handoff Quest**, **Restart Session** and **Complete Quest**. **Skip Auto-Journal** and **Handoff Quest** appear for Claude Code quests only, and **Add to Supervisor** not for Shell quests.
 
 ### Completing a Quest
 
 When the agent finishes or you're done with a task, choose **Complete Quest**. Sidequest interrupts the agent, ends the session and moves the quest to **Recently Completed** at the bottom of the quest log. The worktree and branch are kept for the **Quest Retention** window (Settings > Storage, default 2 hours) so you can **Restore** the quest; after that they are cleaned up. The [Chronicler](/get-sidequest/docs/guides/journals/) writes a journal entry for completed Claude Code quests within a few minutes.
 
-If you set Quest Retention to **Disabled**, completing a quest deletes it, its worktree and its branch immediately, and the confirmation cannot be skipped.
+If you set Quest Retention to **Disabled**, completing a quest deletes it and its worktree immediately, and the confirmation cannot be skipped. The branch and its commits stay in your repository.
 
-You can also move an active quest back to **Backlog**. The session is killed, but the worktree (if any) is preserved so you can resume later.
+You can also move an active quest back to **Backlog**. The session ends without a journal entry, and Sidequest asks whether to keep the worktree and branch for later or remove them. See [Moving quests between sections](/get-sidequest/docs/guides/quest-types/#moving-quests-between-sections).
 
 ## Running Multiple Quests
 

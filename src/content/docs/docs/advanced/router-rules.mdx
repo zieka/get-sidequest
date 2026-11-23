@@ -57,7 +57,7 @@ git-analyze    = haiku
 - `handoff` -- summarising a conversation for a [handoff](/get-sidequest/docs/guides/handoffs/)
 - `journal` -- the Chronicler writing [journal entries](/get-sidequest/docs/guides/journals/)
 - `council` -- writing the briefing for a [Council](/get-sidequest/docs/guides/council/) review
-- `git-analyze` -- detecting a project's languages and frameworks for the sidebar icons
+- `git-analyze` -- naming quest branches. On macOS, Apple's on-device model (the `fm` CLI) is tried first when installed and licensed; this entry is its fallback
 
 Only the aliases `opus`, `sonnet` and `haiku` are valid here; anything else falls back to `haiku`.
 
@@ -67,7 +67,7 @@ Only the aliases `opus`, `sonnet` and `haiku` are valid here; anything else fall
 2. Change the text. Keep the `## Quest routing` heading and the ` ```internal ` block; everything else is yours. The router is a language model reading prose, so write rules the way you would brief a colleague.
 3. Click **Save**. Your version is written to `~/.sidequest/router-rules.md` and used from the next quest on.
 
-**Reset to default** deletes your file and restores the bundled rules. An empty or missing file also means the defaults.
+**Reset to default** deletes your file and restores the bundled rules. Saving empty rules is refused; a missing or empty file means the defaults.
 
 ### Ideas
 

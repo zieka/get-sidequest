@@ -6,6 +6,9 @@ import react from '@astrojs/react';
 export default defineConfig({
   site: 'https://zieka.github.io',
   base: '/get-sidequest/',
+  redirects: {
+    '/docs/guides/recurring-quests': '/get-sidequest/docs/guides/sagas/',
+  },
   integrations: [
     starlight({
       title: 'Sidequest',
@@ -34,7 +37,7 @@ export default defineConfig({
             { label: 'Journals', slug: 'docs/guides/journals' },
             { label: 'Handoffs', slug: 'docs/guides/handoffs' },
             { label: 'Council', slug: 'docs/guides/council' },
-            { label: 'Recurring Quests', slug: 'docs/guides/recurring-quests' },
+            { label: 'Sagas', slug: 'docs/guides/sagas' },
             { label: 'GitHub Integration', slug: 'docs/guides/github' },
             { label: 'Changes Panel', slug: 'docs/guides/changes-panel' },
             { label: 'Usage Dashboard', slug: 'docs/guides/usage-dashboard' },
@@ -49,6 +52,7 @@ export default defineConfig({
             { label: 'Smart Router Rules', slug: 'docs/advanced/router-rules' },
             { label: 'Supervisor Customization', slug: 'docs/advanced/supervisor-customization' },
             { label: 'Sidequest CLI', slug: 'docs/advanced/cli' },
+            { label: 'Remote Machines', slug: 'docs/advanced/remote-machines' },
             { label: 'Toolkit', slug: 'docs/advanced/toolkit' },
             { label: 'Multi-Project Workflows', slug: 'docs/advanced/multi-project' },
             { label: 'Tmux Configuration', slug: 'docs/advanced/tmux' },

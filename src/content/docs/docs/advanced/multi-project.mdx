@@ -23,7 +23,9 @@ Home                         (your home directory, Current Branch quests only)
 
 ### Workspaces
 
-A workspace is a named container for grouping related projects. It has no path on disk -- it is purely organizational. Use workspaces to group projects by team, client, or initiative. Sidequest starts with one named **Default**.
+A workspace is a named container for grouping related projects. It has no path on disk. Use workspaces to group projects by team, client, or initiative. Sidequest starts with one named **Default**.
+
+A workspace also holds defaults its projects inherit unless they set their own: notification sound, review template, [launch template](/get-sidequest/docs/guides/settings/#launch-template) and **Run on**. See [Workspace and Project Defaults](/get-sidequest/docs/guides/settings/#workspace-and-project-defaults).
 
 ### Projects
 
@@ -37,13 +39,13 @@ Quests belong to a project and represent a unit of work. Each quest gets its own
 
 ### Running Quests Across Projects
 
-Each project has its own set of quests. You can have active quests running simultaneously in different projects -- for example, a backend feature and a frontend feature at the same time. Each runs in its own tmux session with its own worktree.
+Each project has its own set of quests. You can have active quests running simultaneously in different projects -- for example, a backend feature and a frontend feature at the same time. Each runs in its own tmux session with its own worktree, or on its own [remote machine](/get-sidequest/docs/advanced/remote-machines/).
 
 Switch between projects in the sidebar to view each project's quest log. Active sessions keep running in the background when you switch away.
 
 ### Seeing everything at once
 
-- The sidebar shows a green ▶ count of active quests on every project and shimmers a project's name when one of its quests needs attention. The filter button narrows the tree to projects with active quests.
+- The sidebar shows a green ▶ count of active quests on every project and shimmers a project's name when one of its quests needs attention. **With active quests** in the sidebar's **Filter projects** menu narrows the tree to those projects.
 - The **Active quests** button in the bottom toolbar opens a timeline of every active quest across all projects: how long each has run, when it last changed, and **Aging** / **Stale** markers for quests that have gone quiet for a day or three. Click a row to jump to it.
 - The command palette (**Cmd+Shift+P**) searches quests in every project.
 - **Search all journals** (the owl) searches every project's journal entries.
@@ -51,6 +53,10 @@ Switch between projects in the sidebar to view each project's quest log. Active 
 ### Supervising across projects
 
 A [supervisor](/get-sidequest/docs/guides/supervisors/) is not tied to a project. Drag quests -- or whole project headers -- from any number of repositories onto one supervisor, and it answers their prompts and pulls from one queue. This is the easiest way to keep a cross-cutting change (a dependency bump across six services, say) moving unattended.
+
+### Running quests on other machines
+
+Set **Run on** in Workspace Settings to send every Git Repo project's quests in that workspace to a [remote machine](/get-sidequest/docs/advanced/remote-machines/), such as a shared build host or a container per quest. A project or a single quest can pick another remote or **This machine**.
 
 ### Cross-project context
 
@@ -67,6 +73,7 @@ If you still have a multi-repo project:
 - A Worktree quest creates one worktree per child repository under `~/.sidequest/multirepo/<quest-id>/`, all on the same branch name, and runs the agent in the parent directory so it can see them all.
 - The Changes panel prefixes paths with the child repository name.
 - Review quests and the branch selector are not available.
+- Quests always run on this machine; **Run on** does not apply.
 
 ## Monorepo Projects
 
@@ -95,7 +102,8 @@ Workspace: "Infrastructure"
 Tips for staying organized:
 
 - **One workspace per team or initiative.** Keep related projects together.
-- **Star what you work on this week** and use the star filter to hide the rest.
+- **Star what you work on this week** and check **Starred** in the filter menu to hide the rest.
+- **Set shared defaults on the workspace.** A team's review template, launch template or remote then applies to each of its projects.
 - **Use Current Branch quests for cross-cutting questions.** They run directly in the repo without creating branches.
-- **Name quests descriptively.** The quest prompt is used to generate the branch name and to match relevant journals.
+- **Name quests descriptively.** The quest title is used to generate the branch name and to match relevant journals.
 - **Give each kind of work a supervisor** with a ceiling that matches how much of it you want running at once.

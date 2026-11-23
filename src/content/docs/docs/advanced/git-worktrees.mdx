@@ -50,21 +50,25 @@ The quest id is the directory name, so Sidequest can map a working directory bac
 ## Lifecycle of a Worktree quest
 
 <Mermaid chart={`graph TD
-  A[Activate quest] --> B["git worktree add -b quest/&lt;id8&gt; ~/.sidequest/worktrees/&lt;id&gt; &lt;base&gt;"]
+  A[Activate quest] --> A2["git fetch origin &lt;base&gt; (origin/ bases)"]
+  A2 --> B["git worktree add -b quest/&lt;id8&gt; ~/.sidequest/worktrees/&lt;id&gt; &lt;base&gt;"]
   B --> C[Set upstream to base branch]
   C --> D{Setup command?}
   D -->|yes| E[Run it in the worktree]
   D -->|no| F
   E --> F[Launch agent session]
-  F --> G[Rename branch to agent-suggested name]
+  F --> G[Rename branch to generated name]
   H[Complete quest] --> I[Interrupt agent, keep worktree]
   I -->|retention expires| J["git worktree remove"]`} />
 
-1. **Branch creation.** The worktree is created from the base branch you chose, on a temporary branch named `quest/` plus the first eight characters of the quest id.
-2. **Upstream.** Sidequest sets `branch.<name>.remote` and `branch.<name>.merge` to the base branch so `gh pr create` and `git push` target the right place.
-3. **Setup command.** If the project defines one, it runs in the new worktree through your login shell before the agent starts (only when the worktree is newly created).
-4. **Naming.** In the background, Sidequest asks Claude for a branch name derived from your prompt (for example `feat/orders-rate-limit`) and renames the branch. If no usable name comes back, the temporary name stays.
-5. **Completion.** Completing the quest interrupts the agent and keeps the worktree for the **Quest Retention** window so the quest can be restored. When retention expires -- or immediately, if retention is disabled -- the worktree is removed with `git worktree remove --force`, falling back to deleting the directory and `git worktree prune`. The branch is never deleted by Sidequest.
+1. **Fetch.** When the base is an `origin/<branch>` ref (the default unless your local branch has unpushed commits), Sidequest first runs `git fetch origin +refs/heads/<branch>:refs/remotes/origin/<branch>`, so the quest starts from origin's latest commit rather than a stale local branch. If the fetch fails (offline, slow remote), the last-fetched ref is used. Quests created without a base (CLI, handoffs, Sagas) get the same default.
+2. **Branch creation.** The worktree is created from that base, on a temporary branch named `quest/` plus the first eight characters of the quest id.
+3. **Upstream.** Sidequest sets `branch.<name>.remote` and `branch.<name>.merge` to the base branch (without the `origin/` prefix) so `gh pr create` and `git push` target the right place.
+4. **Setup command.** If the project defines one, it runs in the new worktree through your login shell before the agent starts (only when the worktree is newly created).
+5. **Naming.** In the background, Sidequest generates a `type/short-description` name from the quest's title (for example `feat/orders-rate-limit`) and renames the branch. On macOS it first tries Apple's on-device model through the `fm` CLI, when installed and licensed (`sudo fm license`); then Claude, using the `git-analyze` model from the [router rules](/get-sidequest/docs/advanced/router-rules/#internal-chores); then three random words.
+6. **Completion.** Completing the quest interrupts the agent and keeps the worktree for the **Quest Retention** window so the quest can be restored. When retention expires -- or immediately, if retention is disabled -- the worktree is removed with `git worktree remove --force`, falling back to deleting the directory and `git worktree prune`. Completion never deletes the branch.
+
+Moving an active quest to Backlog asks whether to keep the worktree and branch. **Remove worktree & branch** removes the worktree the same way and deletes the local branch with `git branch -D`, unless it is the base, the repository's default or a checked-out branch; the remote branch and any PR are untouched. The next start creates a fresh branch from the base.
 
 ### Review quests
 
@@ -76,7 +80,7 @@ For legacy multi-repo projects, Sidequest creates one worktree per child reposit
 
 ## Diff stats and the Changes panel
 
-Each quest card shows `+added −removed` for its branch relative to the base branch, refreshed in batches for all active quests. The [Changes panel](/get-sidequest/docs/guides/changes-panel/) reads the worktree directly, so uncommitted edits appear immediately.
+Each quest card shows `+added −removed` for its branch relative to the base branch, refreshed in batches for all active quests. The [Changes panel](/get-sidequest/docs/guides/changes-panel/) reads the worktree directly, so uncommitted edits appear within seconds.
 
 ## Disk usage
 
@@ -100,4 +104,4 @@ git branch -a                     # quest branches appear here
 git log main..feat/orders-rate-limit
 ```
 
-You can push a quest branch, open a PR, rebase it, or merge it from any tool. Sidequest does not merge or delete branches on its own; ask the agent to run `gh pr create`, or do it yourself.
+You can push a quest branch, open a PR, rebase it, or merge it from any tool. Sidequest never merges branches and deletes one only when you choose to remove it; ask the agent to run `gh pr create`, or do it yourself.

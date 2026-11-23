@@ -1,29 +1,34 @@
 ---
 title: Setup
-description: Set up Sidequest dependencies including an agent CLI, tmux, git and the GitHub CLI.
+description: Set up Sidequest dependencies including an agent CLI, tmux, git and the GitHub CLI, with the first-run Welcome Bot.
 ---
 
-Sidequest runs agents you have already installed and logged into on your machine. On first launch the setup wizard checks each dependency and offers to install anything that is missing.
+Sidequest runs agents you have already installed and logged into on your machine. On first launch the **Welcome Bot** checks for every agent and tool, picks a default agent you have, and offers to install anything that is missing.
 
-## Required Dependencies
+## Dependencies
 
-| Tool | Purpose |
-|------|---------|
-| **Claude Code CLI** | The default agent. Supervisors, journals, Council summaries and the smart router all use it, so install it even if you mostly run other agents. |
-| **tmux** | Terminal multiplexer that keeps every session alive in the background |
-| **git** | Version control -- used for worktrees, branching and diffs |
-| **GitHub CLI (gh)** | Optional but recommended -- enables issue browsing, PR badges, Review quests and cloning private repos |
+The Welcome Bot lists them in three groups:
 
-### Optional agents
+| Group | Tool | Purpose |
+|-------|------|---------|
+| **Agents** | Claude Code, Gemini CLI, Codex CLI, Copilot CLI, OpenCode | Run your quests. You need at least one. |
+| **Foundations** | **git**, **tmux** | Required. git keeps each quest in its own worktree; tmux keeps sessions alive in the background. |
+| **Extras** | **GitHub CLI (gh)** | Optional but recommended -- enables issue browsing, PR badges, Review quests and cloning private repos |
+| | **Apple Foundation Models** (macOS) | Optional. Names quest branches on-device for free, before falling back to Claude. Listed only when Apple's `fm` tool is present. |
 
-Sidequest can run quests on other agents. Install and authenticate whichever you want to use, then point Sidequest at them in **Settings > Agent** if they are not found automatically:
+Install **Claude Code** even if you mostly run other agents: journals, handoffs, Council summaries and the smart router all use it. Supervisors can run on Claude Code, Codex CLI, Copilot CLI or OpenCode.
+
+### Agents
+
+All agents install through npm. Install and authenticate whichever you want to use, then point Sidequest at them in **Settings > Agent** if they are not found automatically:
 
 | Agent | Binary | Install |
 |-------|--------|---------|
+| Claude Code | `claude` | `npm install -g @anthropic-ai/claude-code` |
 | Gemini CLI | `gemini` | `npm install -g @google/gemini-cli` |
 | Codex CLI | `codex` | `npm install -g @openai/codex` |
 | Copilot CLI | `copilot` | `npm install -g @github/copilot` |
-| OpenCode | `opencode` | See [opencode.ai](https://opencode.ai) |
+| OpenCode | `opencode` | `npm install -g opencode-ai` |
 
 See [Agents and Models](/get-sidequest/docs/guides/agents-and-models/) for what each agent supports inside Sidequest.
 
@@ -75,19 +80,19 @@ npm install -g @anthropic-ai/claude-code
 sudo pacman -S --noconfirm tmux git gh
 ```
 
-## Setup Wizard
+## Welcome Bot
 
-When you launch Sidequest for the first time, the setup wizard walks you through dependency validation:
+When you launch Sidequest for the first time, the Welcome Bot scans your machine:
 
-1. A welcome screen introduces the app
-2. The **Check Dependencies** step scans your system for each tool
-3. If a tool is found, its version is displayed with a green checkmark
-4. If a tool is missing and the prerequisite package manager is available, an **Install** button appears to install it directly
-5. If auto-install is not possible (e.g., npm is not installed), the wizard shows what's needed and provides a **Copy** button for the manual install command
+1. Each tool shows its version and a check mark when found.
+2. Pick the agent that runs new quests; it is marked **Default**. The Welcome Bot keeps your current default if it is installed, otherwise it picks the first installed agent in the list. Change it later in **Settings > Agent**.
+3. For a missing tool, click **Install** when its package manager is present (npm for agents; Homebrew on macOS; apt, dnf or pacman on Linux). Otherwise the row names what is missing (for example **Needs Node.js**) and offers **Copy command**.
+4. If Apple Foundation Models shows **License not agreed yet**, copy `sudo fm license` and run it in a terminal.
+5. Click **Check again** to rescan, then **Start questing**. If git or tmux is missing, or no agent is installed, the button reads **Continue anyway**.
 
-You can skip missing dependencies and continue, but Sidequest cannot create sessions without an agent CLI and tmux.
+Quests cannot run until git and tmux are installed.
 
-You can re-run the wizard at any time from **Settings > General > Setup Guide > Run Again**.
+You can re-run the Welcome Bot at any time from **Settings > General > Setup Guide > Run Again**.
 
 ## Path Resolution
 
@@ -109,8 +114,10 @@ On every launch Sidequest refreshes a few files of its own:
 
 - `~/.sidequest/bin/sidequest` and `~/.sidequest/bin/sidequest-journal` -- command-line tools that agents (and you) can use. See [Sidequest CLI](/get-sidequest/docs/advanced/cli/).
 - `~/.claude/skills/sidequest/SKILL.md` and `~/.claude/skills/sidequest-journal/SKILL.md` -- Claude Code skills that teach the agent how to use those tools. They are rewritten at every launch, so edit the extended prompts instead of these files.
-- `~/.sidequest/skills/sidequest-supervisor.md` -- the supervisor's system prompt.
+- `~/.sidequest/skills/sidequest-supervisor.md` -- the supervisor's standing instructions.
 - A Claude Code **Stop hook** (once you enable notifications in **Settings > Notifications**) so Sidequest knows when a session is waiting for you.
+
+Each Claude Code quest on this machine also starts with a statusline, `~/.sidequest/hooks/statusline.sh`, that records Claude's `/usage` counter for [Live Stats](/get-sidequest/docs/guides/usage-dashboard/#live-stats) and then runs your own statusline.
 
 ## Verifying Your Setup
 

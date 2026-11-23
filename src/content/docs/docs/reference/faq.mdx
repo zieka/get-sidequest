@@ -16,7 +16,7 @@ See [Data and Storage](/get-sidequest/docs/reference/storage/) for the full map.
 
 ### Does anything leave my machine?
 
-Agents talk to their own providers as they always do. Sidequest itself contacts GitHub through `gh` (issues, PRs, clones), its release feed for updates, and a public pricing file for the cost estimator. There are no accounts and no telemetry.
+Agents talk to their own providers as they always do. Sidequest itself contacts GitHub through `gh` (issues, PRs, clones), your `origin` remote (`git fetch` before a new quest's worktree), its release feed for updates, and a public pricing file for the cost estimator. If you set up [remote machines](/get-sidequest/docs/advanced/remote-machines/), it also connects to them with the commands you gave it. There are no accounts and no telemetry.
 
 ### What happens to my worktrees if I close the app?
 
@@ -28,7 +28,11 @@ They keep running. Each agent session runs inside a tmux session, which is indep
 
 ### Can I use agents other than Claude Code?
 
-Yes: Gemini CLI, Codex CLI, Copilot CLI and OpenCode can run quests. Some features -- the smart router, effort levels, profiles, automatic journals, needs-attention status and token statistics -- are Claude Code only. See [Agents and Models](/get-sidequest/docs/guides/agents-and-models/).
+Yes: Gemini CLI, Codex CLI, Copilot CLI and OpenCode can run quests, and **Shell** opens a plain terminal with no agent. Supervisors run on Claude Code, Codex CLI, Copilot CLI or OpenCode. Some features -- the smart router, profiles, automatic journals, needs-attention status on this machine, token statistics and token budgets -- are Claude Code only. See [Agents and Models](/get-sidequest/docs/guides/agents-and-models/).
+
+### Can quests run on another machine?
+
+Yes. Define a remote machine (an ssh host, a Docker container, a devpod.sh or Coder workspace, or any command you can template) and pick it in **Run on** for a workspace, project or quest. The agent and checkout live on that machine; the terminal, Changes panel and journals keep working in the app. See [Remote Machines](/get-sidequest/docs/advanced/remote-machines/).
 
 ### Can I use Sidequest with multiple git remotes?
 
@@ -49,7 +53,7 @@ Sidequest creates standard git worktrees and branches. Everything it does is vis
 
 ### Does Sidequest modify my tmux or git configuration?
 
-Sidequest does not read or write `~/.tmux.conf` or `~/.gitconfig`. It sets three options on the running tmux server (escape time, focus events, default terminal) and per-session options (scrollback, mouse mode); none of these are written to disk. Git operations use standard commands without modifying your global or local git settings.
+Sidequest does not read or write `~/.tmux.conf` or `~/.gitconfig`. It sets three options on the running tmux server (escape time, focus events, default terminal) and per-session options (scrollback, mouse mode); none of these are written to disk. Git operations use standard commands and leave your global git settings alone; the only repository config they write is each quest branch's upstream, as `git push -u` would.
 
 ### Can I use my own editors and terminals with Sidequest?
 
@@ -60,6 +64,10 @@ Yes. Sidequest has settings for preferred editor (VS Code, IntelliJ IDEA, Zed) a
 ### Where did "Research" and "Changes" go?
 
 They were renamed. **Current Branch** is the old Research type and **Worktree** is the old Changes type. Nothing else changed, and the CLI accepts both names.
+
+### Where did recurring quests go?
+
+They became [Sagas](/get-sidequest/docs/guides/sagas/) in 0.83. The first launch of 0.83 or later converts each recurring quest into a Saga with the same schedule and prompt: ones that were on are published and keep running, the rest become drafts. See [Coming from recurring quests](/get-sidequest/docs/guides/sagas/#coming-from-recurring-quests) for what else changed. Open them from the Sagas button in the bottom toolbar, or from **Sagas in this project** in the Quest Log header.
 
 ### How do I recover a quest that crashed?
 
@@ -101,9 +109,9 @@ The smart router asks Claude which model to use before the first session starts.
 
 ## Supervisors
 
-### Why does the supervisor need `--dangerously-skip-permissions`?
+### Why do supervisors run with permissions bypassed?
 
-The supervisor runs autonomously as a long-lived Claude Code session that monitors and manages other sessions. It needs to run `sqlite3` and `tmux` commands without manual approval for each action. This flag is set only on supervisor sessions; regular quests use auto mode by default.
+A supervisor is a long-lived, unattended session: nobody is there to approve its tool calls. It runs with each agent's bypass flag (`--dangerously-skip-permissions` on Claude Code, `--dangerously-bypass-approvals-and-sandbox` on Codex) and acts on the board through the `sidequest` CLI, which limits its board commands to its own group. That guards against slips; it is not a sandbox. See [Supervisor Customization](/get-sidequest/docs/advanced/supervisor-customization/).
 
 ### I don't see a supervisor toggle on my project
 
@@ -117,7 +125,7 @@ Yes, as many as you like, each watching its own group of quests from any project
 
 Common causes:
 
-- **No work left.** A supervisor stops itself once all of its quests are completed or unassigned, unless it has recurring quests attached or is the parent of another supervisor.
+- **No work left.** A supervisor stops itself once all of its quests are completed or unassigned, unless it is wired into a Saga whose trigger is on or is the parent of another supervisor.
 - **Claude API error.** If the session hits a persistent API error, it may exit. Click the speech bubble on its sheet to read its terminal.
 - **tmux killed externally.** If the `sq-supervisor-<id>` session is killed from the command line, the supervisor stops.
 
@@ -131,7 +139,7 @@ To restart: click **Start** on the sheet, or turn on **Auto-start when work is w
 
 ### Why didn't my completed quest get a journal entry?
 
-The Chronicler skips quests that opted out (**Skip Auto-Journal**), quests spawned by a recurring quest without **Journal each run**, quests on agents other than Claude Code, conversations that are missing or very short, and work it judges routine (version bumps, typo fixes). It also only runs when **Chronicle completed quests automatically** is on; quests completed while it was off are never chronicled later. Entries usually appear within five minutes of completion.
+The Chronicler skips quests that opted out (**Skip Auto-Journal**), quests on agents other than Claude Code, conversations that are missing or very short, and work it judges routine (version bumps, typo fixes). It also only runs when **Chronicle completed quests automatically** is on; quests completed while it was off are never chronicled later. Entries usually appear within five minutes of completion.
 
 ### How do agents find journals?
 
@@ -177,11 +185,11 @@ The indicator is triggered by Claude Code's Stop hook. If the hook fires but Cla
 
 ### Quests never show "Needs attention"
 
-Notifications are off. Enable them in **Settings > Notifications** to install the Stop hook. Quests on agents other than Claude Code do not report this status.
+Notifications are off. Enable them in **Settings > Notifications** to install the Stop hook. Quests on this machine report it only for Claude Code; [remote quests](/get-sidequest/docs/advanced/remote-machines/#local-only-features) read it from the screen.
 
 ### Orphaned worktrees taking up disk space
 
-**Settings > Storage > Worktree Storage** lists worktrees that are orphaned or belong to completed quests, with their sizes, and offers **Reclaim All**. To do it by hand:
+**Settings > Storage > Worktree Storage** lists worktrees that are orphaned or belong to completed quests, with their sizes, and offers **Reclaim All**. From a terminal, `sidequest storage list` shows the same list and `sidequest storage reclaim --orphaned --completed` reclaims it (add `--dry-run` to preview). To do it by hand:
 
 ```bash
 # List Sidequest worktrees

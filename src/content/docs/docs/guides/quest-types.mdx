@@ -24,9 +24,9 @@ Use Worktree quests when you want to:
 
 ### Branch and base branch
 
-You pick a **base branch** -- the branch your new worktree is forked from. It defaults to the currently checked-out branch but can be any local branch; the list marks the current and default branches. The base branch is used when computing diff stats and is set as the upstream so `gh pr create` targets the right branch.
+You pick a **Base Branch** -- the branch your new worktree is forked from. Type to search local branches and `origin/*` branches; the list marks the current and default branches. It defaults to `origin/<current branch>`, or to the local branch when it has commits origin doesn't. For an `origin/` base, Sidequest fetches that branch as the quest starts, so the quest begins at origin's latest commit; offline, it uses the last-fetched one. The base branch is used when computing diff stats and is set as the upstream (without the `origin/` prefix) so `gh pr create` targets the right branch.
 
-The quest starts on a temporary branch named `quest/<first 8 characters of the quest id>`. In the background Sidequest asks Claude for a descriptive branch name derived from your prompt (e.g. `feat/orders-rate-limit`) and renames the branch once it has one.
+The quest starts on a temporary branch named `quest/<first 8 characters of the quest id>`. In the background Sidequest generates a descriptive name from the quest's title (e.g. `feat/orders-rate-limit`) and renames the branch once it has one. On macOS with Apple's `fm` command-line tool installed and its license accepted (`sudo fm license`), the name comes from Apple's free on-device model in about half a second; otherwise Claude names it, and if that fails too, three random words do.
 
 ### Plan mode
 
@@ -61,7 +61,7 @@ The session is terminated. No branches or worktrees need cleanup since none were
 
 Review quests are for reviewing pull requests. When you create one, you select an open PR from your repository; Sidequest fetches the PR's head branch into a worktree and sends the agent your review prompt.
 
-- The prompt defaults to `/review <pr-number>`. Set a per-project **Review Template** in Project Settings to change it (`{pr_number}` is substituted), or edit the **Review Prompt** field when creating the quest.
+- The prompt defaults to `/review <pr-number>`. Set a **Review Template** in Project Settings, or once for a whole workspace in Workspace Settings, to change it (`{pr_number}` is substituted; the project's template wins), or edit the **Review Prompt** field when creating the quest.
 - If the PR branch is already checked out somewhere (for example in your own worktree), Sidequest checks the quest out detached at the fetched commit so your checkout is untouched.
 - You can also start a Review quest from a project's right-click menu: **Review Pull Request...**.
 
@@ -75,6 +75,10 @@ Use Review quests when you want to:
 The **Home** entry above the workspace tree is a built-in project for your home directory. Because it is a plain directory rather than a repository, only Current Branch quests can run there. They are handy for questions that span many repos ("which of my projects still pin Node 18?") or for scratch work.
 
 Claude Code's auto permission mode escalates often outside a repository. If that gets in the way, enable **Settings > Agent > Bypass Permissions in Home** to launch Home quests with `--dangerously-skip-permissions`. This grants the agent unrestricted access to your whole home directory, so leave it off unless you need it.
+
+## Remote machines
+
+If you've defined a [remote machine](/get-sidequest/docs/advanced/remote-machines/), Create Quest shows a **Run on** select under **Type** for git-repository projects, so the quest runs on that machine instead of this one.
 
 ## Choosing a type
 
@@ -90,7 +94,7 @@ If you're unsure, start with **Worktree** -- it's the default for repositories a
 
 ## Token budgets
 
-Any quest can carry a **Token budget**. Set it in the Create Quest or Edit Quest dialog; leave it blank for unlimited. Sidequest checks the session's total token use at each turn boundary (when the agent stops to wait for input) and, once the budget is reached, stops the session and shows a **Token budget reached** toast. The quest stays in Active so you can inspect it, raise the budget, and **Restart Session**.
+A Claude Code Worktree or Review quest can carry a **Token budget**; other agents and Current Branch quests accept one, but it is not enforced. Set it under **Advanced** in the Create Quest or Edit Quest dialog; leave it blank for unlimited. Sidequest checks the session's total token use at each turn boundary (when the agent stops to wait for input) and, once the budget is reached, stops the session and shows a **Token budget reached** toast. The quest stays in Active so you can inspect it, raise the budget, and **Restart Session**.
 
 The Live Stats panel shows a **Token budget** bar for the active quest that turns amber at 80% and red when exceeded.
 
@@ -103,15 +107,22 @@ The Live Stats panel shows a **Token budget** bar for the active quest that turn
   C -->|Restore| B
   B -->|Move to backlog| A`} />
 
-**Backlog** -- The quest is defined but not running. No session, no worktree yet. Click a backlog quest to edit its prompt, type, supervisor, model, effort or token budget.
+**Backlog** -- The quest is defined but not running. Click a backlog quest to open Edit Quest and change its prompt, attachments, type, context projects, agent, Claude account, supervisor, model, effort or token budget; **Save** keeps it queued, **Make Active** starts it.
 
-**Active** -- The quest has a live session. You can rename an active quest by double-clicking its title; **Edit** lets you change model and effort, which apply the next time the session is (re)started.
+**Active** -- The quest has a live session. You can rename an active quest by double-clicking its title. To change anything else, move it back to Backlog first.
 
 **Recently Completed** -- When you complete a quest it moves here (collapsed by default). The session is interrupted, but the quest remains visible for the retention period so you can **Restore** it or **Delete** it permanently. Completed quests are automatically pruned after the retention period expires. This section is hidden when retention is disabled.
 
 ### Moving quests between sections
 
-Drag and drop quests between the Active and Backlog sections. Dropping a backlog quest onto the Active section header (or onto an active quest) promotes it and launches its session. Dropping an active quest onto the Backlog section pauses it by killing the session; the worktree is preserved.
+Drag and drop quests between the Active and Backlog sections. Dropping a backlog quest onto the Active section header (or onto an active quest) promotes it and launches its session.
+
+Dropping an active quest onto Backlog, or choosing **Move to Backlog**, opens a dialog. Moving ends the session without writing a journal, and the quest's supervisor won't pull it again until you edit or start it. For a Worktree quest, pick:
+
+- **Keep worktree & branch** -- start it again later on the same code. With the same agent, Claude Code and Codex resume the old conversation, which won't see edits to the prompt or context projects; a different agent starts fresh with the prompt.
+- **Remove worktree & branch** -- delete the worktree and the local branch; the remote branch and any PR are kept. The next start begins a new branch from the base. Review quests offer **Remove worktree** instead.
+
+The dialog warns when the worktree has uncommitted files or unpushed commits. Current Branch quests just ask for confirmation.
 
 You can also reorder quests within a section by dragging them. The order of the backlog matters when a [supervisor](/get-sidequest/docs/guides/supervisors/) pulls from it.
 

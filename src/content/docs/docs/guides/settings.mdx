@@ -1,11 +1,13 @@
 ---
 title: Settings
-description: Configure Sidequest preferences, agents, routing, appearance, storage and behavior.
+description: Configure Sidequest preferences, agents, routing, remote machines, appearance, storage, and workspace and project defaults.
 ---
 
-Open settings with **Cmd+,**, from the **Sidequest** menu bar > **Settings...**, or with the gear icon in the bottom toolbar.
+Open settings with **Cmd+,**, from the **Sidequest** menu bar > **Settings...**, or with the gear button in the group at the right of the bottom toolbar.
 
-Settings are organized into nine categories via the sidebar navigation. Theme and language also have quick toggles in the bottom toolbar.
+Settings are organized into ten categories in the sidebar. Next to the gear, the bottom toolbar also has quick buttons for theme, notification sounds and language.
+
+Defaults for one workspace or project, such as its notification sound, **Run on** or **Launch Template**, are set in Workspace Settings and Project Settings instead. See [Workspace and Project Defaults](#workspace-and-project-defaults).
 
 ## General
 
@@ -31,7 +33,7 @@ On Linux the value is used as a command name, falling back to gnome-terminal, ko
 
 ### Setup Guide
 
-**Run Again** re-runs the first-launch setup wizard. Useful if you skipped steps or need to reconfigure prerequisites like tmux or an agent CLI.
+**Run Again** re-opens **Welcome Bot**, the first-launch setup guide. Useful if you skipped steps or need to reconfigure prerequisites like tmux or an agent CLI.
 
 ## Appearance
 
@@ -49,7 +51,7 @@ Defaults for the [Changes panel](/get-sidequest/docs/guides/changes-panel/):
 - **Font Size** -- 9--24, default 13. This is the base size before zoom (**Cmd+=** / **Cmd+-**).
 - **Font Weight** -- Light, Regular (default), Medium, Semibold or Bold. A sample line previews the result.
 
-Light, dark and system themes are switched from the sun/moon button in the bottom toolbar, not from this page. The embedded terminal always uses a dark palette.
+Light, dark and system themes are switched from the sun/moon button in the group at the right of the bottom toolbar, not from this page. The embedded terminal always uses a dark palette.
 
 ## Agent
 
@@ -71,7 +73,14 @@ Separate Claude accounts, each with its own configuration directory. Type a **Pr
 | **Bypass Permissions in Home** | Disable | Only shown when Auto Mode is on. Launch Home quests with `--dangerously-skip-permissions`, since auto mode escalates constantly outside a repository. Grants unrestricted access to your home directory |
 | **Effort Level** | Extra High | Reasoning effort for new Claude Code sessions: Low, Medium, High, Extra High or Max. Quests and the smart router can override it |
 
-### Gemini CLI, Codex CLI, Copilot CLI, OpenCode
+### Codex CLI
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| **CLI Path** | auto-detect | Absolute path to `codex` if auto-detection fails |
+| **Approve for Me** | Disable | Use Codex's approve-for-me mode, which reviews approval requests automatically inside its workspace-write sandbox. The sandbox blocks `sidequest` commands. Disabled, Codex quests run with `--dangerously-bypass-approvals-and-sandbox` |
+
+### Gemini CLI, Copilot CLI, OpenCode
 
 A **CLI Path** for each, with the same Detected / Not found indicator. Leave blank to auto-detect.
 
@@ -106,6 +115,10 @@ Controls how Sidequest handles mouse and keyboard input in the terminal panel. C
 
 Shows the three server options Sidequest applies to the running tmux server at startup, with a **Copy snippet** button so you can add them to `~/.tmux.conf` permanently. See [Tmux Configuration](/get-sidequest/docs/advanced/tmux/).
 
+## Remote machines
+
+Define the machines quests can run on: ssh hosts, Docker containers, devpod.sh or Coder workspaces, or any CLI you can template. Pick a preset, type a **Remote name** and click **Add remote** to open its template editor. Each remote's card has **Edit**, **Delete** and a **Check** field that lists which tools the machine has. Choose where quests run with **Run on**. See [Remote Machines](/get-sidequest/docs/advanced/remote-machines/).
+
 ## Notifications
 
 ### Claude Code Integration
@@ -122,7 +135,7 @@ curl -d "$SIDEQUEST_PROJECT_NAME needs attention" https://example.com/notify
 
 Use **Test Command** to verify it works before relying on it.
 
-Per-project sounds are set in **Project Settings**. The bell button in the bottom toolbar mutes and unmutes sounds without changing these settings.
+A workspace or project can pick its own sound; see [Workspace and Project Defaults](#workspace-and-project-defaults). The bell button in the bottom toolbar mutes and unmutes sounds without changing these settings.
 
 ## Model Providers
 
@@ -161,11 +174,54 @@ Shows how much disk Sidequest's worktrees use and which can be reclaimed. Rows a
 
 Lists `sq-` tmux sessions that no longer belong to a quest or supervisor. **Clean All** kills them to free system resources.
 
+## Workspace and Project Defaults
+
+Some settings can be set once for a workspace and overridden per project. Open **Workspace Settings...** from a workspace's **⋮** menu, or **Project Settings...** from a project's right-click menu. Both save as you go; click **Done** to close. For each project-only setting, see [Project Settings](/get-sidequest/docs/getting-started/first-workspace/#project-settings).
+
+| Setting | Precedence | When nothing is set |
+|---------|------------|---------------------|
+| **Notification Sound** | Project, then workspace | The sound under [Notifications](#notifications) |
+| **Review Template** | Project, then workspace | `/review {pr_number}` |
+| **Launch Template** | Project, then workspace; `none` on a project starts directly | Agents start directly |
+| **Run on** | Quest, then project, then workspace; **This machine** stops the cascade | This machine. See [Remote Machines](/get-sidequest/docs/advanced/remote-machines/#choose-where-quests-run) |
+
+Workspace values aren't copied onto projects, so a workspace edit reaches every project that inherits it, and a project moved to another workspace inherits from its new one. Quests pick values up at different times: the review template when the quest is created, the launch template at each launch, and **Run on** at the quest's first launch.
+
+Both dialogs show where each value comes from:
+
+- Under a project setting: **From *Acme* workspace**, or **Overrides *Acme* workspace** with **Reset** to inherit again. For a text field that inherits, **Customize** copies the workspace's text in for you to edit.
+- Under a workspace setting: **Overridden in** and the projects that set their own.
+
+### Launch Template
+
+Starts each quest's agent through a command of yours instead of directly, for example to load a worktree's `.envrc` first:
+
+```bash
+direnv exec {dir} {command}
+```
+
+Sidequest replaces these placeholders:
+
+| Placeholder | Value |
+|-------------|-------|
+| `{agent}` | The agent's name, such as `claude` |
+| `{dir}` | The quest's working directory |
+| `{prompt}` | The quest's prompt |
+| `{prompt_file}` | Path to a file holding the quest's prompt, kept outside the worktree under `~/.sidequest/quest-prompt/` |
+| `{agent_args}` | Sidequest's flags for the agent, such as session, permissions and settings |
+| `{command}` | The full command Sidequest would otherwise run: agent, flags and prompt |
+
+- Leave placeholders unquoted; Sidequest quotes the values. `{agent_args}` and `{command}` become several words, so `sh -c {command}` won't work.
+- Keep the template to one command. Environment variables Sidequest sets for the agent lead the line, so anything after `;`, `&&` or `|` loses them.
+- Include `{prompt}`, `{prompt_file}` or `{command}`. Otherwise a quest with a prompt fails to start rather than lose it.
+- Without `{agent_args}` or `{command}`, your command sets the agent's permissions, and plan-mode and resumed quests start directly. The terminal says so when this happens.
+- If the command fails, the terminal shows its exit code and points back to this setting.
+
 ## Import and Export
 
 At the bottom of the settings sidebar:
 
 - **Export Settings** -- downloads `sidequest-settings.json` with all your non-internal settings.
-- **Import Settings** -- loads settings from a previously exported JSON file.
+- **Import Settings** -- loads settings from a previously exported JSON file. Unknown keys are skipped; any other bad value refuses the whole file. A notification sound naming a custom sound this machine hasn't imported is left as it was.
 
-Useful for syncing settings across machines or sharing your configuration with teammates. Layout state (panel widths, last active workspace) is excluded from exports.
+Useful for syncing settings across machines or sharing your configuration with teammates. Layout state (panel widths, last active workspace) is excluded, and so are remote machines and workspace and project settings. `sidequest settings export` and `import` use the same file; see [Sidequest CLI](/get-sidequest/docs/advanced/cli/).

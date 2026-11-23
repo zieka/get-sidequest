@@ -1,0 +1,165 @@
+---
+title: Remote Machines
+description: Run a quest's agent and checkout on an ssh host, a Docker container, a devpod.sh or Coder workspace, or any machine you can reach with a command.
+---
+
+import Mermaid from '../../../../components/Mermaid.astro';
+
+A quest can run its agent and its checkout on another machine: an ssh host, a Docker container, a devpod.sh or Coder workspace, or anything you can reach with a command. The terminal, Changes panel, attention status, resume and automatic journal entries keep working. Nothing is installed on the remote, and it never calls back to your machine.
+
+A **remote** is a named set of command templates. Sidequest runs them on your machine to create, start, reach, stop and delete the remote machine, and to run the quest's agent, git and tmux there.
+
+## What a remote machine needs
+
+- `tmux`, `git`, and `tar` with `gzip`
+- The agent CLI, already logged in
+- Access to the project's `origin` remote, since the checkout is cloned there
+- For ssh-based remotes, an OpenSSH server whose host key you have accepted once by hand. The presets run ssh with `BatchMode=yes`, so a password prompt or an unknown host key fails at once with ssh's own message.
+
+## Add a remote
+
+1. Open **Settings** > **Remote machines**.
+2. Pick a preset, type a **Remote name** and click **Add remote**.
+3. The editor opens on the preset's templates. Fill in what your setup needs (an **ssh** remote needs **host**) and click **Save**.
+4. To test it, type a machine name or host on the remote's card and click **Check**. Sidequest runs `command -v` through the **exec** template and lists which of tmux, git, claude, codex, copilot, gemini and opencode it **Found** and which are **Missing**.
+
+Saving checks that **exec** and **exec_tty** contain `{command}` or `{command_ssh}`, and that a remote with **create** also has **delete**, so every machine it makes can be removed. Names are unique, ignoring case.
+
+**Delete** is refused while a quest still has a machine on the remote. Workspaces, projects and quests set to it go back to inheriting **Run on**.
+
+### Presets
+
+| Preset | What it reaches | Clone |
+|--------|-----------------|-------|
+| **ssh** | An existing host over one multiplexed ssh connection. Set **host** to an alias from `~/.ssh/config` or `user@host`. Quests share the host, each in its own directory | Sidequest clones |
+| **docker** | A container on this machine, one per quest, made with `docker run -d --name {name} ubuntu:24.04 sleep infinity`. The stock `ubuntu:24.04` image has neither git nor tmux, so point **create** at an image that does | Sidequest clones |
+| **devpod** | A devpod.sh workspace made with `devpod up {repo}@{base_branch}` and reached through the `{name}.devpod` ssh entry devpod adds. The checkout is at `/workspaces/{name}` | Provider clones |
+| **coder** | A Coder workspace made from a Coder template named `devpod`, which must exist in your deployment, and reached through the `coder.{name}` entry that `coder config-ssh` adds | Sidequest clones |
+
+Any other CLI works too: start from the closest preset and edit its templates.
+
+### Templates
+
+Leave an optional template empty to skip that step.
+
+| Template | What it does |
+|----------|--------------|
+| **exec** | Required. Runs a command on the machine, no terminal. Must contain `{command}` or `{command_ssh}` |
+| **exec_tty** | Required. Runs a command with a terminal attached. Must contain `{command}` or `{command_ssh}` |
+| **connect** | A long-running connection kept in the foreground, such as `ssh -M -N`. Restarted on failure; stopped on archive or quit |
+| **exists** | Exit 0 if the machine exists. Empty: assumed to exist |
+| **running** | Exit 0 if the machine is running. Empty: assumed running |
+| **create** | Creates the machine. May clone the repository. Empty: never created |
+| **start** | Starts a stopped machine |
+| **stop** | Stops the machine when the quest is completed or moved to the backlog |
+| **delete** | Deletes the machine when the quest is deleted |
+| **ready** | Polled every 3 s, for up to 10 minutes, until it exits 0 |
+| **wrap** | Wraps the agent command, received as one quoted `{command}`, and must run it itself, e.g. `systemd-run --scope sh -c {command}` |
+| **tmux** | The tmux command on the machine. Default `tmux` |
+| **name** | The machine name for a quest. Default `sq-{quest_short}` |
+| **host** | The ssh host or alias |
+| **dir** | The quest directory on the machine. Default `~/.sidequest/worktrees/{quest_id}`; a leading `~` is the remote's home |
+
+`sh` has no `pipefail`, so a probe like `cli list | grep …` reads a missing or broken CLI as "no such machine". Run the CLI first and `exit 255` when it fails, as the presets do: Sidequest reads 255 as "could not check" and stops.
+
+### Placeholders
+
+Leave placeholders unquoted: Sidequest quotes each value, except in **name**, **host**, **dir** and **tmux**.
+
+| Placeholder | Value |
+|-------------|-------|
+| `{quest_id}` | The quest's ID |
+| `{quest_short}` | The first 8 characters of the quest's ID |
+| `{name}` | The machine's name, from the **name** template or the create output |
+| `{host}` | The ssh host, from the **host** template; empty without one |
+| `{repo}` | The project's origin URL; empty after Sidequest restarts |
+| `{base_branch}` | The quest's base branch, or the project's default; empty after Sidequest restarts |
+| `{dir}` | The quest directory on the machine, from the **dir** template; empty until the machine is first ready |
+| `{ctl}` | Path to this quest's local ssh control socket, for `ssh -S` |
+| `{command}` | The command Sidequest runs on the machine; in **wrap**, the agent's command |
+| `{command_ssh}` | `{command}` quoted twice, for ssh, whose server parses it again |
+
+- `{command}` and `{command_ssh}` work only in **exec**, **exec_tty** and **wrap**. `{command}` is one word, so `docker exec -i {name} sh -lc {command}` works; use `{command_ssh}` with `ssh`, `coder ssh` and other transports that re-parse the line.
+- **name** sees only `{quest_id}` and `{quest_short}`; **host** also sees `{name}`.
+- Keep `{repo}`, `{base_branch}` and `{dir}` out of **stop** and **delete**, since they can be empty then.
+
+### Other fields
+
+| Field | What it does |
+|-------|--------------|
+| **env** | `KEY=value` per line, set for every template command. Stored as given, so keep secrets out |
+| **Clone** | **Sidequest clones** runs `git clone` of the project's origin over **exec**. **Provider clones** leaves it to **create** and expects a checkout at **dir** |
+| **Name from create output** | Use the last line **create** prints as the machine name, for providers that choose the name themselves |
+
+## Choose where quests run
+
+**Run on** can be set in three places. The most specific one wins:
+
+| Where | Options |
+|-------|---------|
+| **Workspace Settings** (workspace **⋮** menu) | **This machine** (default) or a remote |
+| **Project Settings** | **Use workspace (…)**, **This machine** or a remote |
+| Create Quest dialog, under **Type** | **Use project (…)**, **This machine** or a remote. Shown only for Git Repo projects, and only once a remote exists |
+
+**This machine** stops the cascade, so a project can stay local inside a remote workspace. Only Git Repo projects run remotely: Home, directory and multi-repo projects always run on this machine, and their **Run on** is disabled.
+
+A quest's machine is decided at its first launch. Changing **Run on** on its project or workspace later never moves a quest that has already started, and Edit Quest has no **Run on** field. From the [CLI](/get-sidequest/docs/advanced/cli/), use `--run-on` on `sidequest workspace set`, `project set` or `quest create`.
+
+## What a remote quest looks like
+
+When a remote quest launches, it provisions its machine. The terminal shows each step meanwhile, and provisioning gives up after 25 minutes.
+
+<Mermaid chart={`graph TD
+  A[Quest launches] --> B{exists?}
+  B -->|no| C[create]
+  B -->|yes| D{running?}
+  C --> D
+  D -->|no| E[start]
+  D -->|yes| F[connect, poll ready]
+  E --> F
+  F --> G[Check tmux, git and the agent]
+  G --> H[Clone, check out the quest's branch]
+  H --> I[Start tmux and the agent]`} />
+
+- A Worktree quest gets its own branch; a Review quest fetches the PR. A Current Branch quest works in a fresh clone of the project's default branch, so it does not see uncommitted work on your machine.
+- The project's **Setup Command** runs in the new checkout on the machine.
+- The quest card shows a server icon, dimmed until the machine is ready. Hover it for the machine name and any message.
+- The terminal header shows the machine name and its state: **Provisioning**, **Ready**, **Stopped** or **Failed**, with the reason when stopped or failed.
+- Claude transcripts are copied back to this machine every 15 seconds, so journals and resume work.
+
+On the machine, Sidequest writes only to the checkout at **dir**, its tmux session, and a sibling `.quest-<id>` folder for attachments and prompt files.
+
+## Local-only features
+
+| Feature | On a remote quest |
+|---------|-------------------|
+| OpenCode | Refused: OpenCode runs locally only |
+| **Chrome Browser Tools** | Dropped; the agent starts without `--chrome` |
+| [Claude account profile](/get-sidequest/docs/guides/agents-and-models/#claude-account-profiles) | Ignored; the agent uses the remote's own login |
+| [Council](/get-sidequest/docs/guides/council/) | Shows **Local quests only** |
+| Live Stats | No Claude status line, so no Claude `/usage` there |
+| **Open in Editor**, **Open in File Manager**, **Open in Terminal** | Hidden, since the checkout is not on this machine |
+| Needs attention | Read from the agent's screen instead of the Stop hook; not available for Gemini CLI |
+| Sagas | Saga quests always run on this machine |
+| [Handoffs](/get-sidequest/docs/guides/handoffs/) | A remote quest can't be a handoff target |
+| `sidequest` and `sidequest-journal` | Not on the remote's `PATH`, so its agent can't drive the board or search journals |
+
+## Completing, backlogging and deleting
+
+| Action | What happens to the machine |
+|--------|-----------------------------|
+| **Complete** | **stop** runs |
+| **Move to Backlog** | **stop** runs. The checkout stays on the machine and is not checked for unsaved work |
+| Delete, including retention cleanup | **stop**, then **delete** runs, and the local copy of its transcripts is removed |
+
+All three are refused while the quest is still provisioning.
+
+### When a machine won't stop
+
+If **stop** or **delete** fails and **exists** reports the machine gone (removed elsewhere, say), the action goes ahead. Otherwise the quest is marked **Failed** and a **Problem with remote machine …** dialog shows the error with **Complete anyway**, **Move anyway** or **Delete anyway**.
+
+Continuing makes Sidequest forget the machine: it never stops or deletes it, and the machine may still be running and costing money. A toast lists the **stop** and **delete** commands to run yourself. From the CLI, `sidequest remote forget-machine <quest> --force` does the same.
+
+## Launch templates on a remote
+
+A project's or workspace's [Launch Template](/get-sidequest/docs/guides/settings/#launch-template) also applies to its remote quests: `{dir}` is the checkout on the machine and `{prompt_file}` is written there.
