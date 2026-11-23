@@ -41,7 +41,7 @@ Right-click any item to **Edit** it in the Toolkit editor, open it in your prefe
 
 ### Sidequest's own skills
 
-Two skills in the list are managed by Sidequest and rewritten at every launch: **sidequest** (creating quests from an agent) and **sidequest-journal** (searching and writing journals). Editing them in the Toolkit will not stick; see [Sidequest CLI](/get-sidequest/docs/advanced/cli/).
+Two skills in the list are managed by Sidequest and rewritten at every launch: **sidequest** (driving the board from an agent: quests, supervisors, Sagas and more) and **sidequest-journal** (searching and writing journals). Editing them in the Toolkit will not stick; see [Sidequest CLI](/get-sidequest/docs/advanced/cli/).
 
 ## Extension System Architecture
 
@@ -164,7 +164,7 @@ Sidequest ships with three built-in extensions, registered by the app and always
 
 ### Live Stats (`sidequest.stats`)
 
-Displays live token usage (input, output, cache read), an estimated cost, the quest's **Token budget** progress when one is set, and Tools / Skills timing tables for the active quest's Claude Code session. Uses `keepAlive: true` so it maintains state across panel toggles.
+Displays the running session's cost and time as Claude's `/usage` reports them, the quest's estimated total cost and tokens (input, output, cache read), its **Token budget** progress when one is set, and Tools / Skills timing tables for the active quest. See [Live Stats](/get-sidequest/docs/guides/usage-dashboard/#live-stats). Uses `keepAlive: true` so it maintains state across panel toggles.
 
 Capabilities: `session:read`, `quest:read`
 

@@ -5,7 +5,7 @@ description: Automatic notes on what each quest learned and decided, searchable 
 
 import Mermaid from '../../../../components/Mermaid.astro';
 
-Journals are markdown notes about what a quest discovered, decided, and why. Since 0.72 they are the memory of your agents as much as documentation for you: the **Chronicler** writes one automatically when a Claude Code quest completes, every new quest is shown the entries that look relevant to its task, and agents can search and write them from the terminal.
+Journals are markdown notes about what a quest discovered, decided, and why. Since 0.72 they are the memory of your agents as much as documentation for you: the **Chronicler** writes one automatically when a Claude Code quest completes, every new quest is shown the entries that look relevant to its task, and agents can search, write and manage them from the terminal.
 
 ## What a journal entry looks like
 
@@ -42,20 +42,20 @@ Entries written before 0.72 (which only had `date`, `project` and `branch`) stil
   B -->|notable| C[Journal .md with tags + summary]
   B -->|routine work| D[Skipped]
   M[Make Journal Entry] --> B
+  J[sidequest journal chronicle] --> B
   E[sidequest-journal write] --> C`} />
 
-**Automatically.** A background sweep runs at startup and every five minutes. For each completed Claude Code quest it has not seen, it sends the conversation to Claude with the Chronicler prompt. The Chronicler returns a title, summary, tags and body -- or declines when the work was routine (version bumps, typo fixes, abandoned tasks), in which case no entry is written. Quests are skipped when:
+**Automatically.** A background sweep runs at startup and every five minutes. For each completed Claude Code quest it has not seen, it sends the conversation to Claude with the Chronicler prompt. The Chronicler returns a title, summary, tags and body -- or declines when the work was routine (version bumps, typo fixes, abandoned tasks), in which case no entry is written. Quests a [Saga](/get-sidequest/docs/guides/sagas/) starts are chronicled like any other. Quests are skipped when:
 
-- the quest's **Skip Auto-Journal** menu item is checked;
-- it was spawned by a recurring quest whose **Journal each run** switch is off (the default for recurring quests, since runs are frequent);
+- the quest's **Skip Auto-Journal** menu item is checked (`sidequest quest edit --journal off`);
 - it ran on an agent other than Claude Code;
 - the conversation is missing or too short.
 
 Turn automatic entries off with **Chronicle completed quests automatically** in the journal settings (see below). Quests completed while it is off are never chronicled retroactively.
 
-**Manually.** Click **+** in the **Journal Entries** section at the bottom of the quest log and pick a quest, or right-click a quest and choose **Make Journal Entry**. The same Chronicler runs; if it finds nothing worth recording it says so.
+**Manually.** Click **+** in the **Journal Entries** section at the bottom of the quest log and pick a quest, or right-click a quest and choose **Make Journal Entry**, or run `sidequest journal chronicle <quest>`. The same Chronicler runs; if it finds nothing worth recording it says so.
 
-**From an agent.** The `sidequest-journal write` command creates an entry with `source: agent`. See [Sidequest CLI](/get-sidequest/docs/advanced/cli/).
+**From an agent.** The `sidequest-journal write` command creates an entry with `source: agent`. See [Sidequest CLI](/get-sidequest/docs/advanced/cli/#sidequest-journal).
 
 ## How quests use journals
 
@@ -67,7 +67,7 @@ relying on it and check its date against the code:
 - Webhook retries were double-counting under the old nonce scheme (2026-10-11): ~/.sidequest/journal/api-gateway/webhook-retries-double-counting.md
 ```
 
-Beyond those three, the agent can search everything with `sidequest-journal search --terms a,b`. The `sidequest-journal` skill that Sidequest installs into `~/.claude/skills/` tells Claude Code to search at the start of a quest, to treat entries as leads rather than facts, and to write an entry only for hard-won, non-obvious findings.
+Beyond those three, the agent can search everything with `sidequest-journal search --terms a,b`, which works even with the app closed. The `sidequest-journal` skill that Sidequest installs into `~/.claude/skills/` tells Claude Code to search at the start of a quest, to treat entries as leads rather than facts, and to write an entry only for hard-won, non-obvious findings.
 
 Disable the automatic suggestions with **Suggest related journals when a quest starts** in the journal settings.
 
@@ -111,6 +111,21 @@ Search terms are matched by prefix and OR-ed; title and tag matches rank highest
 
 The target directory is remembered as an extra search directory, so the entry stays searchable from its new home. If the commit fails (for example because of a git hook), the copied file is removed again.
 
+## From the command line
+
+`sidequest journal` does everything above from a terminal, and is what agents use when asked to curate entries. It needs the app running; searching and writing go through `sidequest-journal`, which doesn't.
+
+```bash
+sidequest journal list --source manual            # newest first
+sidequest journal read webhook-retries-double-counting
+sidequest journal commit webhook-retries-double-counting --to docs/journals
+sidequest journal chronicle d3b4b819              # write one from a quest's conversation
+sidequest journal retention list --older-than 180
+sidequest journal dir set ~/notes/api-gateway     # or --default
+```
+
+Name an entry by its file name, with or without `.md`. `commit --to` needs an existing directory, relative to the project's own checkout rather than a quest's worktree; it commits only that file and pushes nothing. `dir set` sends new entries elsewhere; existing ones stay in the old directory. See [Sidequest CLI](/get-sidequest/docs/advanced/cli/#journal-entries) for every verb.
+
 ## Retention
 
 Journals accumulate. **Settings > Storage** has two controls:
@@ -120,7 +135,7 @@ Journals accumulate. **Settings > Storage** has two controls:
 
 Automatic retention runs after each five-minute sweep and only touches a project's own journal directory, never folders you committed entries into.
 
-**Review old journals** opens a keep-or-kill pass. Choose **Older than** (7--365 days) and go through entries one at a time with the full body rendered: **Keep** (K) stamps today's date as `reviewed` and restarts its clock, **Archive** / **Delete** (X) applies your retention action, and **Skip** (→) moves on. A summary line reports what you kept, archived and skipped.
+**Review old journals** opens a keep-or-kill pass. Choose **Older than** (7--365 days) and go through entries one at a time with the full body rendered: **Keep** (K) stamps today's date as `reviewed` and restarts its clock, **Archive** / **Delete** (X) applies your retention action, and **Skip** (→) moves on. A summary line reports what you kept, archived and skipped. `sidequest journal retention list`, `keep` and `retire` do the same from the terminal.
 
 ## When journals are useful
 

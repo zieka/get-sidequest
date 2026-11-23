@@ -46,7 +46,7 @@ Run parallel coding agents -- Claude Code, Gemini CLI, Codex CLI, Copilot CLI or
 
 ## Requirements
 
-- An agent CLI (Claude Code recommended; it also powers supervisors, journals and routing)
+- An agent CLI (Claude Code recommended; journals and the smart router need it, and supervisors run on Claude Code, Codex, Copilot or OpenCode)
 - `tmux` and `git`
 - `gh` for GitHub issues, pull-request badges and Review quests
 

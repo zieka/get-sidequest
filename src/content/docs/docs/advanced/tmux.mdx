@@ -45,6 +45,8 @@ When you activate a quest, Sidequest:
 4. Attaches a PTY to stream output to the embedded terminal
 5. Auto-accepts the agent's trust/permission dialogs by detecting them and sending the appropriate keypress
 
+A **Shell** quest's session runs your login shell (`$SHELL -l`) instead of an agent. A quest that runs on a [remote machine](/get-sidequest/docs/advanced/remote-machines/) keeps its tmux session on that machine, started through the remote's own login shell and `tmux`; the local `PATH` setup above doesn't apply there.
+
 The session runs with `LANG=en_US.UTF-8` and `LC_CTYPE=en_US.UTF-8` to ensure Unicode renders correctly. Without this, apps launched from Finder inherit a minimal locale that makes tmux replace Unicode with underscores.
 
 ## Tmux Path Resolution

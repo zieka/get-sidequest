@@ -5,7 +5,7 @@ description: Learn how to use Sidequest to run and supervise parallel coding-age
 
 Welcome to the Sidequest documentation. Sidequest runs coding agents -- Claude Code, Gemini CLI, Codex CLI, Copilot CLI and OpenCode -- as **quests** on a per-project board, isolates each one in its own git worktree, and lets a **supervisor** agent keep the board moving while you are away.
 
-This documentation describes Sidequest **0.75**, plus two supervisor changes merged after that release: a default supervisor per project and supervisors that resume their session on restart.
+This documentation describes Sidequest **0.83**.
 
 ## Quick Links
 
@@ -14,18 +14,33 @@ This documentation describes Sidequest **0.75**, plus two supervisor changes mer
 - [Quest Types](/get-sidequest/docs/guides/quest-types/) -- Worktree, Current Branch and Review quests
 - [Agents and Models](/get-sidequest/docs/guides/agents-and-models/) -- Pick an agent, a model and an effort level, or let the smart router choose
 - [Supervisors](/get-sidequest/docs/guides/supervisors/) -- Group quests under an agent that answers prompts and pulls work from a queue
+- [Sagas](/get-sidequest/docs/guides/sagas/) -- Saved agent workflows that run on a schedule, a new pull request or issue, or a click
 - [Journals](/get-sidequest/docs/guides/journals/) -- Automatic notes that later quests read as memory
-- [Sidequest CLI](/get-sidequest/docs/advanced/cli/) -- Let agents create quests and search journals from the terminal
+- [Sidequest CLI](/get-sidequest/docs/advanced/cli/) -- Drive the whole board from a terminal, for you, your scripts and your agents
+- [Remote Machines](/get-sidequest/docs/advanced/remote-machines/) -- Run quests over ssh, in Docker, devpod.sh or Coder
 - [Keyboard Shortcuts](/get-sidequest/docs/reference/shortcuts/) -- Navigate Sidequest like a pro
 
 ## What changed recently
 
-If you last used Sidequest in the spring, the biggest changes are:
+New since 0.75:
+
+- **Sagas replace recurring quests.** Draw a workflow of quest, condition, wait, human-input, command and other steps, start it on a schedule, a new pull request or issue, or by hand, and watch each run on its graph. Existing recurring quests are converted on first launch.
+- **Remote machines.** A quest can run its agent and checkout on an ssh host, Docker container, devpod.sh or Coder workspace, chosen per workspace, project or quest.
+- **The `sidequest` CLI covers the whole board**: quests, supervisors, Sagas, projects, settings, remotes, accounts and disk cleanup.
+- **Supervisors run on Codex, Copilot or OpenCode** as well as Claude Code, act through the CLI, and wake as soon as work is assigned. The Supervisors board hides the Unassigned pool until you open it.
+- **Shell quests** open a plain terminal with no agent.
+- **Diff comments.** Comment on lines in the Changes panel and send the notes to the quest's agent.
+- **Workspace defaults** for notification sound, review template, **Run on** and **Launch Template**, which projects inherit.
+- **Codex** quests run without approval prompts by default (opt into **Approve for Me**), with model and effort pickers.
+- New quests start from the freshly fetched `origin` branch, and branch names come from Apple's on-device model when it is installed and licensed.
+- A **Welcome Bot** first-run guide that detects every agent on your machine.
+
+Earlier, 0.75 brought:
 
 - **Quest types were renamed.** "Changes" is now **Worktree** and "Research" is now **Current Branch**. The behaviour is unchanged.
 - **Supervisors are cross-repo groups**, not a per-project toggle. Open them from the robot button in the bottom bar.
 - **Five agents.** Gemini CLI, Codex CLI, Copilot CLI and OpenCode can run quests alongside Claude Code.
 - **Smart model router** picks a model and effort per quest; **profiles** let you run quests under different Claude accounts.
-- **Journals are written automatically** when a quest completes, and a `sidequest-journal` CLI lets agents search them.
+- **Journals are written automatically** when a quest completes, and agents search them with `sidequest-journal`.
 - **Supervisors remember.** A restarted supervisor resumes its previous conversation and keeps a notes file, and each project can name a **default supervisor** for new quests.
 - **Home quests**, the **Active Quests** timeline, **token budgets**, **GitHub issue browsing**, cloning projects from a URL, and more.

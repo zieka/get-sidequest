@@ -7,7 +7,7 @@ Sidequest organizes your work into **workspaces** and **projects**. The sidebar 
 
 ## Concepts
 
-**Workspace** -- A named group for organizing related projects. Think of it as a folder or team label. Examples: "Backend Services", "Client Work", "Personal". Workspaces are purely organizational and do not correspond to a directory on disk.
+**Workspace** -- A named group for organizing related projects. Think of it as a folder or team label. Examples: "Backend Services", "Client Work", "Personal". A workspace does not correspond to a directory on disk, but it can hold defaults its projects inherit, such as a notification sound or where quests run (see [Workspace Settings](#workspace-settings)).
 
 **Project** -- A directory on disk, typically a git repository. Projects live inside workspaces and are where you create quests. Sidequest supports three project types:
 
@@ -30,7 +30,7 @@ Sidequest ships with one workspace named **Default**. It is an ordinary workspac
 1. Hover a workspace header and click its **⋮** menu, then **Add Project**
 2. In the **Add Project** dialog pick a tab:
    - **From disk** -- click **Choose Folder…** and select a directory
-   - **Clone** -- paste a repository URL or `owner/repo` shorthand, choose a parent folder with **Choose**, and click **Clone**. GitHub URLs and shorthand are cloned with `gh repo clone`, so private repos work once `gh auth login` has run; other hosts use `git clone`. The clone lands in `<parent>/<repo-name>` and the parent folder is remembered for next time.
+   - **Clone** -- paste a repository URL or `owner/repo` shorthand, choose a parent folder with **Choose**, and click **Clone**. GitHub URLs and shorthand are cloned with `gh repo clone`, so private repos work once `gh auth login` has run; other hosts use `git clone`. A preview line reads **Clone** `<url>` **into** `<parent>/<repo-name>`, where the clone lands; the parent folder is remembered for next time.
 3. Sidequest scans the directory:
    - If it contains a `.git` folder, it is added as a **Git Repo**
    - If it contains child directories with `.git` folders, the **Add Git Repositories** picker lists them; select the ones you want and click **Add N Projects** to add each as a separate project
@@ -41,7 +41,7 @@ The project appears under its workspace using the directory name as its display 
 ## Sidebar Structure
 
 ```
-Workspaces                      <-- filters: active-only, starred-only
+Workspaces                      <-- filter menu: with active quests, starred
   Search projects               <-- type to filter, Enter selects the top hit
   Home                          <-- built-in home-directory project
   Acme                          <-- workspace (project count)
@@ -56,13 +56,13 @@ Workspaces                      <-- filters: active-only, starred-only
 - Click a **project** to select it and open its quest log
 - Each project row shows its current branch, a green ▶ count of active quests, and -- on hover -- icons for the languages and frameworks Sidequest detected. A project whose quest needs your attention shimmers.
 - Drag projects to reorder them within a workspace or move them to another workspace; drag workspace headers to reorder workspaces
-- Hover a workspace header for its **⋮** menu: **Add Project**, **Rename**, **Delete** (deleting removes its projects and quests)
+- Hover a workspace header for its **⋮** menu: **Add Project**, **Rename**, **Workspace Settings...**, **Delete** (deleting removes its projects and quests)
 
 ### Finding projects quickly
 
 - **Search projects** -- type to filter by name across all workspaces. Enter selects the top match; Esc clears.
-- **Star** a project from its right-click menu. Starred projects show an amber star and can be shown on their own with the star button in the sidebar header.
-- The **filter** button in the header shows only projects with active quests. Both filters combine.
+- **Star** a project from its right-click menu. Starred projects show an amber star.
+- The **Filter projects** menu in the sidebar header has **With active quests** and **Starred**. Check either or both; the button is highlighted while a filter is on.
 
 ### Project menu
 
@@ -72,18 +72,33 @@ Right-click a project for: **Star**/**Unstar**, **Copy Working Directory**, **Op
 
 **Rename** also renames the folder on disk (and the project's journal folder). It is refused while any of the project's quests still has a worktree or a live session.
 
-## Project Settings
+## Workspace Settings
 
-Right-click a project and choose **Project Settings...** to set per-project behaviour:
+Hover a workspace header, open its **⋮** menu and choose **Workspace Settings...** to set defaults for every project in it. Changes save as you go.
 
 | Setting | What it does |
 |---------|--------------|
-| **Notification Sound** | Overrides the global sound for this project's quests |
+| **Notification Sound** | Plays when a quest in this workspace's projects needs attention, instead of the global sound |
+| **Run on** | Where quests run: **This machine** (default) or a [remote machine](/get-sidequest/docs/advanced/remote-machines/) |
+| **Launch Template** | A command agents start through. See [Launch Template](/get-sidequest/docs/guides/settings/#launch-template) |
+| **Review Template** | The prompt Review quests start from. `{pr_number}` is replaced with the PR number. Blank uses `/review {pr_number}` |
+
+A project can set its own value for any of these. Each setting lists the projects that do under **Overridden in**. See [Workspace and Project Defaults](/get-sidequest/docs/guides/settings/#workspace-and-project-defaults).
+
+## Project Settings
+
+Right-click a project and choose **Project Settings...** to set per-project behaviour. Changes save as you go. Where the workspace sets a value, the project's setting says **From *Acme* workspace**, or **Overrides *Acme* workspace** with **Reset** to inherit again.
+
+| Setting | What it does |
+|---------|--------------|
+| **Notification Sound** | Overrides the workspace's or global sound for this project's quests |
 | **Default Claude account** | New quests in this project start on this [profile](/get-sidequest/docs/guides/agents-and-models/#claude-account-profiles) |
-| **Attach projects to new quests** | Context projects every new quest starts with (editable per quest) |
 | **Default supervisor** | New quests in this project start with this [supervisor](/get-sidequest/docs/guides/supervisors/) (editable per quest). Changing it never moves existing quests |
+| **Run on** | Where this project's quests run unless a quest picks another: **Use workspace (…)**, **This machine** or a [remote](/get-sidequest/docs/advanced/remote-machines/). Disabled for multi-repo and directory projects, which always run on this machine |
+| **Attach projects to new quests** | Context projects every new quest starts with (editable per quest) |
 | **Setup Command** | Runs in a freshly created worktree before the agent starts, e.g. `cp ~/myapp/.env.local .env.local`. Runs via your login shell; a failure is reported in a toast and the quest continues |
-| **Review Template** | The prompt used by Review quests. `{pr_number}` is replaced with the PR number. Default: `/review {pr_number}` |
+| **Launch Template** | A command this project's agents start through. Blank uses the workspace's; `none` starts them directly. See [Launch Template](/get-sidequest/docs/guides/settings/#launch-template) |
+| **Review Template** | The prompt used by Review quests. `{pr_number}` is replaced with the PR number. Blank uses the workspace's template, else `/review {pr_number}` |
 
 The journal directory is set from the Journals section of the quest log instead (see [Journals](/get-sidequest/docs/guides/journals/)).
 
@@ -93,6 +108,5 @@ Selecting a project opens its **quest log** in the main panel. The quest log is 
 
 ## Tips
 
-- You can add the same directory as a project in multiple workspaces if needed.
 - Expanding a different workspace deselects the active quest, which is a quick way to get back to the project map.
 - Projects with a valid git repository enable the full feature set: worktree-based isolation, branch selection, diff stats and GitHub integration.

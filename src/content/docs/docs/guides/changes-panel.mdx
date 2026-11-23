@@ -1,6 +1,6 @@
 ---
 title: Changes Panel
-description: Review a quest's diff, filter and search changed files, and open them in your editor.
+description: Review a quest's diff, comment on lines for the agent, filter and search changed files, and open them in your editor.
 ---
 
 The **Changes** panel (**⌘4**) shows what the active quest has changed. It sits below the terminal in the main panel; drag the divider between them to resize, or hide the terminal (**⌘3**) for a full-height diff.
@@ -21,6 +21,20 @@ On the left, a resizable file tree lists every changed file with its status. Typ
 
 In multi-repo projects, paths are prefixed with the child repository name.
 
+## Comment on lines
+
+Send the quest's agent a note about specific lines without leaving the diff:
+
+1. Click a line's gutter (a **+** appears on hover). Drag along the gutter, or Shift-click, to select several lines.
+2. Type in **Comment for the agent**.
+3. Press **⌘Enter** (or **Ctrl+Enter**) or click **Send**. **Esc** cancels.
+
+The agent receives the file path, the working-tree line numbers and the selected code (up to 30 lines), followed by your comment, and Sidequest submits it. A toast confirms **Sent to the quest's session**.
+
+If the agent is already asking you something, nothing is pasted: answer it in the terminal and send again; your comment stays in the box. If a menu appears mid-send or the paste doesn't show up within two seconds, Sidequest leaves Enter to you: **Pasted into the agent's prompt but not sent. Press Enter in the quest's terminal.** Gemini CLI always gets comments this way.
+
+Comments need the quest's session to be running. They are not available on Shell quests or on `.md` files while **Render markdown** is on.
+
 ## Find in diff
 
 Press **⌘F** (or **Ctrl+F**) while the panel has focus to open the find bar in the top-right corner of the diff:
@@ -33,4 +47,4 @@ Press **⌘F** (or **Ctrl+F**) while the panel has focus to open the find bar in
 ## Tips
 
 - Each quest card shows `+added −removed` line counts for its branch, so you can spot large diffs without opening them.
-- The panel reads the quest's worktree directly, so changes appear as soon as the agent writes them -- no commit required.
+- The panel reads the quest's worktree directly, so changes appear within seconds of the agent writing them (about ten seconds for a quest on a remote machine) -- no commit required.

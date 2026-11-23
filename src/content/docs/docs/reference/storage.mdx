@@ -3,18 +3,18 @@ title: Data and Storage
 description: Where Sidequest keeps its database, worktrees, journals, handoffs, profiles and other files, and what cleans them up.
 ---
 
-Everything Sidequest stores lives on your machine. There are no accounts and nothing is uploaded. Agents talk to their own providers; Sidequest itself only reaches out to GitHub (through `gh`), to its release feed for updates, and to a public pricing file for the cost estimator.
+Everything Sidequest stores lives on your machine, except the checkout and attachments of a quest on a [remote machine](/get-sidequest/docs/advanced/remote-machines/), which live there. There are no accounts and nothing is uploaded. Agents talk to their own providers; Sidequest itself only reaches out to GitHub (through `gh`), your `origin` remote (`git fetch` before a new quest's worktree), your remote machines, its release feed for updates, and a public pricing file for the cost estimator.
 
 ## The database
 
-Quests, projects, workspaces, supervisors, recurring quests, settings and profiles live in a SQLite database:
+Quests, projects, workspaces, supervisors, Sagas and their runs, remote machines, settings and profiles live in a SQLite database:
 
 | Platform | Path |
 |----------|------|
 | macOS | `~/Library/Application Support/com.sidequest.app/sidequest.db` |
 | Linux | `~/.config/com.sidequest.app/sidequest.db` |
 
-Supervisors read and write this database directly with `sqlite3`, so keep that tool installed if you use them.
+Supervisors act on it through the [`sidequest` CLI](/get-sidequest/docs/advanced/cli/), so they don't need `sqlite3`.
 
 ## `~/.sidequest/`
 
@@ -24,18 +24,22 @@ Supervisors read and write this database directly with `sqlite3`, so keep that t
 | `multirepo/<quest-id>/<repo>/` | Per-child worktrees of multi-repo quests | same |
 | `attachments/<quest-id>/` | Files attached to a quest's prompt | Deleted with the quest |
 | `quest-context/<quest-id>.json` | The context block injected at session start | Deleted with the quest |
+| `quest-prompt/<quest-id>.md` | The prompt handed to an agent started through a Launch Template | Deleted with the quest |
+| `quest-status/` | What a Claude Code quest's statusline last reported (`<quest-id>.json`), and your own statusline command it chains to (`<quest-id>.statusline`) | Deleted with the quest |
+| `remote/<quest-id>/` | Control socket and mirrored transcripts of a quest on a [remote machine](/get-sidequest/docs/advanced/remote-machines/) | Deleted with the quest |
 | `journal/<project>/` | Journal entries (`archive/` holds retired ones) | Journal Retention |
 | `journal-index.db` | Full-text search index over journals (disposable) | `sidequest-journal reindex` rebuilds it |
 | `handoffs/` | Handoff summaries | Handoff Retention |
 | `council/<quest-id>.md` | Council briefings | Removed when the council session is cleaned up |
 | `profiles/<name>/` | One Claude Code config directory per profile | Deleting the profile |
 | `bin/` | `sidequest` and `sidequest-journal` CLIs | Refreshed every launch |
-| `skills/sidequest-supervisor.md` | Supervisor system prompt | Rewritten every launch |
-| `supervisor-state/<supervisor-id>/notes.md` | A supervisor's own notes: what it handled and learned | You |
+| `skills/sidequest-supervisor.md` | Supervisor standing instructions | Rewritten every launch |
+| `supervisor-state/<supervisor-id>/` | A supervisor's `notes.md` (what it handled and learned) and any message it failed to deliver to a quest twice | You |
 | `router-rules.md` | Your edited routing rules (absent until you save edits) | **Reset to default** |
 | `extensions/` | Third-party extensions | You |
 | `sounds/` | Imported notification sounds | Settings > Notifications |
 | `hooks/on-claude-stop.sh` | The Claude Code Stop hook script | Settings > Notifications > Disable |
+| `hooks/statusline.sh` | Statusline script that feeds Live Stats for Claude Code quests | Rewritten when needed |
 | `logs/` | Rolling app logs (50 KB files, last 30 kept) | Automatic |
 | `sidequest.sock` | Local socket the CLI and hooks use to reach the app | Automatic |
 
@@ -49,7 +53,10 @@ Every session Sidequest creates is named with an `sq-` prefix: `sq-<quest-id>`, 
 
 | Job | When |
 |-----|------|
-| Recurring quest scheduler | Every 60 seconds, plus a catch-up pass at launch |
+| Saga triggers (schedules, pull requests, issues) | Every minute |
+| Saga run sweep | At launch, then every 15 seconds |
+| Supervisor heartbeat (Codex, Copilot, OpenCode) | After a supervisor sits idle for a minute |
+| Remote transcript copy | Every 15 seconds per remote quest |
 | Journal sweep (Chronicler) and journal retention | At launch, then every 5 minutes |
 | Completed-quest pruning | Every 5 minutes |
 | Handoff pruning | At launch and every 6 hours, at most once a day |

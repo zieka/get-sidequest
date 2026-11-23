@@ -1,77 +1,307 @@
 ---
 title: Sidequest CLI
-description: The sidequest and sidequest-journal command-line tools that agents (and you) can use to create quests and search journals.
+description: The sidequest and sidequest-journal command-line tools that agents (and you) use to drive the board, supervisors, Sagas, projects, journals and settings.
 ---
 
-Sidequest installs two command-line tools into `~/.sidequest/bin/` at every launch and prepends that directory to `PATH` inside every quest session. Agents use them through the skills Sidequest writes to `~/.claude/skills/`; you can use them from any terminal.
+Sidequest installs two command-line tools into `~/.sidequest/bin/` at every launch and puts that directory first on `PATH` inside every local quest and supervisor session. Agents use them through the skills Sidequest writes to `~/.claude/skills/`; you can use them from any terminal.
 
 | Command | Needs the app running? | What it does |
 |---------|------------------------|--------------|
-| `sidequest` | Yes -- talks to the app over `~/.sidequest/sidequest.sock` | List projects and quests, create quests |
+| `sidequest` | Yes -- talks to the app over `~/.sidequest/sidequest.sock` | Everything the board does: quests, supervisors, Sagas, projects, journal entries, settings, remotes, accounts, usage, routing rules, the Stop hook, disk cleanup |
 | `sidequest-journal` | No -- reads the journal files and index directly | Search and write journal entries |
 
-Add `~/.sidequest/bin` to your own `PATH` to call them by name outside a quest.
+Add `~/.sidequest/bin` to your own `PATH` to call them by name outside a quest. A quest on a [remote machine](/get-sidequest/docs/advanced/remote-machines/) does not get it: Sidequest isn't installed there.
 
 ## `sidequest`
 
-`sidequest` is the app binary itself, symlinked into `~/.sidequest/bin`. Every command accepts `--json` for machine-readable output. Exit codes: `0` success, `1` the app refused the request, `2` usage error, `3` the app is not running.
+`sidequest` is the app binary itself, symlinked into `~/.sidequest/bin`. Run with no arguments it opens the app; with any other arguments it runs as the CLI, so a typo is a usage error rather than a second window.
 
-### `sidequest project list`
+The commands are grouped by noun. Each section below gives a synopsis and the options you will reach for most; `sidequest <noun> --help` and `sidequest <noun> <verb> --help` list everything, with examples.
 
-Lists every project with its name, type, path, workspace and id.
+### Conventions
 
-### `sidequest quest list`
+- **`--json`** works on every command and prints the app's reply as JSON.
+- **Naming things.** A quest is its id or the id's first 4+ characters, as `quest list` prints it. A project is its id, path or name; a workspace, supervisor, Saga, remote or account is its id (or a 4+ character prefix, for workspaces, supervisors and Sagas) or its name in any case.
+- **Inside a quest**, leave out the quest id on `show`, `edit`, `complete`, `status`, `read`, `attention`, `assign`, `hold`, `handoff` and similar verbs to mean the quest you are running in. Leave out `--project` to mean the project containing the current directory.
+
+| Exit code | Meaning |
+|-----------|---------|
+| `0` | Success |
+| `1` | Sidequest answered and refused; the message says why |
+| `2` | Usage error (bad flag or value) |
+| `3` | Sidequest is not running, or did not answer in time |
+| `4` | Text reached an agent's prompt but was not submitted (`send`, `nudge`, `handoff`) |
+
+### Quests
 
 ```
-sidequest quest list [-p PROJECT] [-s open|backlog|active|archived]
-                     [-t research|changes|review] [--pr N] [--limit N]
+sidequest quest create | list | show | edit
+sidequest quest activate | backlog | complete | restore | delete | restart
+sidequest quest status | read | send | attention clear|set
+sidequest quest assign | unassign | hold | release | reorder
+sidequest quest handoff
+sidequest quest attach | attachments | detach
 ```
 
-Defaults to `open` (backlog and active) across all projects, up to 200 rows. `-t` uses the internal type names: `changes` is a Worktree quest, `research` a Current Branch quest.
+`-t`/`--type` takes the internal type names: `changes` is a Worktree quest, `research` a Current Branch quest, `review` a Review quest.
 
-### `sidequest quest create`
+#### `quest create`
 
-```
-sidequest quest create [-p PROJECT] [-t research|changes|review]
-                       [--title TITLE] [-d TEXT | --description-file PATH|-]
-                       [--pr N] [--active] [--base-branch BRANCH] [--plan]
-                       [--model MODEL] [--effort LEVEL]
-                       [--supervisor ID|NAME | --no-supervisor] [--context PROJECT|/dir ...]
-```
+Creates a quest in the **backlog** unless `--active` is given. It takes every option of the Create Quest dialog.
 
 | Option | Notes |
 |--------|-------|
-| `-p`, `--project` | Id, path or name. Defaults to the project containing the current directory |
+| `-p`, `--project` | Default: the project containing the current directory |
 | `-t`, `--type` | Default `research`. Directory projects such as Home only run `research` |
-| `--title` | Defaults to the description's first line, or `Review: PR #N` |
-| `-d`, `--description-file` | Required for `research` and `changes`; `-` reads stdin. A `review` quest without one uses the project's review template |
-| `--pr` | Required for `review` |
-| `--active` | Start now instead of queuing in the backlog. Ignored when `--supervisor` is given, because the supervisor pulls it |
-| `--base-branch`, `--plan` | `changes` quests only |
-| `--model`, `--effort` | Overrides, as in the Create Quest dialog |
-| `--supervisor` | Hand the quest to a supervisor by id or name. Defaults to the project's default supervisor, in which case the output says so |
-| `--no-supervisor` | Create the quest unsupervised even if the project has a default supervisor |
-| `--context` | Repeatable. Other projects or directories to read; not for `review` |
+| `--title` | Default: the issue's title, the description's first line, or `Review: PR #N` |
+| `-d`, `--description` / `--description-file PATH` | The prompt; `-` reads stdin. Required for `research` and `changes` unless `--issue` supplies it. A `review` quest without one uses the project's review template, else the workspace's, else `/review {pr_number}` |
+| `--pr N` | Required for `review` |
+| `--active` | Start now. Ignored when an enabled supervisor takes the quest, since it pulls it from the backlog |
+| `--base-branch`, `--plan` | `changes` only |
+| `--agent` | `claude-code`, `codex-cli`, `copilot-cli`, `gemini-cli`, `opencode` or `shell`. Default: the default agent setting |
+| `--model`, `--effort` | Overrides, as in the dialog |
+| `--account` | `claude-code` only: the Claude account. Default: the project's |
+| `--run-on REMOTE` | A remote's id or name, or `local`. Default: the project's, else the workspace's, else this machine |
+| `--token-budget N` | Stop the session at the first turn end past N tokens (`claude-code` Worktree and Review quests) |
+| `--supervisor` / `--no-supervisor` | Hand it to a supervisor, or skip the project's default one. The output says when the default was used |
+| `--context` | Repeatable. Other projects or directories the agent may read; not for `review` |
+| `--attach PATH` | Repeatable. Copies a file in for the agent |
+| `--issue N` | Repeatable. Links a GitHub issue; not for `review`. `--per-issue` makes one quest per issue |
 
-The output names the quest and its id:
+Nothing is created unless every issue, attachment and setting checks out. The output names the quest and its id:
 
 ```
 Created review quest "Review: PR #123 - Fix login race" in my-repo (backlog).
 id: 7c9e...
 ```
 
-Created quests appear on the board immediately and, if active, launch their session.
+#### `quest list`, `show` and `edit`
+
+```
+sidequest quest list [-p PROJECT] [-s open|backlog|active|archived] [-t TYPE]
+                     [--pr N] [--supervisor S] [--needs-attention] [--limit N]
+sidequest quest show [QUEST]
+sidequest quest edit [QUEST] [--title ...] [-d ...] [--model ...] [--effort ...] ...
+```
+
+`list` defaults to `open` (backlog and active) across all projects, newest first, up to 200 rows; `archived` means Completed. `show` prints status, agent, model, supervisor, worktree, branch, PR and prompt.
+
+`edit` changes only what you pass; `auto` clears a model or effort override, and `--no-context`, `--no-token-budget`, `--default-account` and `--unpin-pr` clear the others. `--journal off` does what the **Skip Auto-Journal** menu item does; `--pin-pr N` links a Worktree quest's card to a PR that isn't on its branch. An active quest refuses changes to type, agent, model, effort, context and account, which only apply when a session starts.
+
+#### Lifecycle
+
+| Command | What it does |
+|---------|--------------|
+| `quest activate QUEST` | Backlog to active; the window starts its session |
+| `quest backlog QUEST` | Stops the session and holds the quest in the backlog. `--remove-worktree` also removes its worktree and local branch; it refuses uncommitted or unpushed work unless `--force` |
+| `quest complete [QUEST]` | Moves it to Completed. With no id inside a quest, completes that quest and interrupts its session just after the reply -- commit and push first. With Quest Retention off it is deleted at once, so it refuses work that would be lost unless `--force` |
+| `quest restore QUEST` | Brings a completed quest back to active |
+| `quest delete QUEST` | Deletes the quest, its session, worktree and attachments. Refuses uncommitted or unpushed work, or a remote checkout, unless `--force` |
+| `quest restart QUEST` | Restarts an active quest's session, resuming its conversation where it can |
+
+`backlog`, `delete` and `restart` refuse the quest they run in.
+
+#### Watch and answer an agent
+
+```
+sidequest quest status [QUEST]
+sidequest quest read [QUEST] [-n LINES]
+sidequest quest send QUEST <TEXT | --file PATH | --choice N|LABEL | --enter>
+sidequest quest attention clear|set [QUEST]
+```
+
+`status` says whether the agent is **working**, **idle** or **waiting** (a menu or question hides its prompt box; a numbered menu's options are listed) and whether its session is alive. `read` prints the last 100 lines of its screen (`-n` up to 1000).
+
+`send` pastes the text whole and presses Enter once the prompt box shows it. While a menu is up it refuses text: answer with `--choice`, preferably by label, since a number picks whatever holds that slot now. Exit `4` means the text was pasted but not submitted: never send it again; check with `read`, then `send --enter`. `send` refuses the quest it runs in.
+
+`attention clear` clears the card's needs-attention flag; `attention set` raises it to hand the quest to a person.
+
+#### Supervisor queues
+
+```
+sidequest quest assign [QUEST] --supervisor S
+sidequest quest unassign | hold | release [QUEST]
+sidequest quest reorder --supervisor S [QUEST ...]
+```
+
+`assign` and `unassign` do what dragging on the supervisor board does. A held backlog quest stays in its supervisor's queue but is not pulled until released. `reorder` puts the named quests first, in order, and prints the queue; with no quests it only prints. See [Supervisors](/get-sidequest/docs/guides/supervisors/).
+
+#### Handoff
+
+```
+sidequest quest handoff [FROM] (--to QUEST [-m TEXT] | --new [quest create options]) [--complete [--force]]
+```
+
+Summarizes FROM's conversation and points a running quest, or a new one, at the summary. See [Handoffs](/get-sidequest/docs/guides/handoffs/#from-the-command-line).
+
+#### Attachments
+
+```
+sidequest quest attach QUEST FILE ...
+sidequest quest attachments [QUEST]
+sidequest quest detach QUEST ATTACHMENT ...
+```
+
+Files are copied into `~/.sidequest/attachments`, so the original can move. An agent is told of its attachments when a conversation starts; give a running one the stored path with `quest send`.
+
+### Supervisors
+
+```
+sidequest supervisor list | show S
+sidequest supervisor create NAME [settings]
+sidequest supervisor update S [--name NAME] [settings]
+sidequest supervisor start | stop | nudge S
+sidequest supervisor delete S [--force]
+sidequest supervisor status | read [-n LINES] | send S ...
+```
+
+| Setting | Notes |
+|---------|-------|
+| `--agent` | `claude-code`, `codex-cli`, `copilot-cli` or `opencode`. Changing it without `--model` resets the model to auto |
+| `--model` | `auto` uses the agent's default |
+| `--auto-answer on\|off` | Answer its active quests' prompts and menus |
+| `--auto-start on\|off` | Start whenever work is waiting (needs the window up and visible) |
+| `--pull-backlog on\|off`, `--ceiling N` | Start queued backlog quests, up to N (1--10) active at once |
+| `--close-quests on\|off`, `--close-conditions TEXT` | Complete quests that meet the conditions. `--close-conditions-file` reads a file or stdin |
+| `--extended-prompt on\|off`, `--extended-prompt-text TEXT` | Instructions added to its own. `--extended-prompt-file` reads a file or stdin |
+| `--reports-to S` / `--no-reports-to` | The supervisor that watches this one |
+
+A supervisor is created stopped. A running one reads its agent, model, rules, ceiling and prompts only at start, so `update` refuses those while it runs: stop, update, start. `--name`, `--auto-start` and `--reports-to` change at any time. `nudge` makes a running supervisor run its loop now. `delete` lists what still uses it (projects, open quests, supervisors that report to it, Sagas) and refuses unless `--force`. `status`, `read` and `send` work as they do for quests. See [Supervisors](/get-sidequest/docs/guides/supervisors/).
+
+### Sagas
+
+```
+sidequest saga list
+sidequest saga run SAGA [--draft | --version V] [--input JSON | --input-file FILE]
+sidequest saga status RUN
+sidequest saga cancel RUN
+sidequest saga trigger SAGA [--enabled on|off]
+sidequest saga report [--run RUN --step STEP] (--result JSON | --result-file FILE | --failed REASON)
+```
+
+Sagas are built in the window; the CLI runs and inspects them. `run` starts the latest published version and answers at once with the run's id; the input is checked against the Saga's inputs first. `status` shows each step, its quest and the result. `cancel` leaves the run's quests as they are. `trigger` shows what starts a Saga unattended (a schedule, or an opened pull request or issue); `--enabled off` stops it, and `on` starts it again from now, passing over what came due while it was off.
+
+`report` is for the agent of a quest that is a Saga step: its prompt ends with the exact command. A result that doesn't match the step's schema exits `1` with each violation, and the step keeps waiting for a corrected report.
+
+`sidequest recurring` is gone: recurring quests became Sagas, and the command now prints where to look and exits `2`. See [Sagas](/get-sidequest/docs/guides/sagas/).
+
+### Projects and workspaces
+
+```
+sidequest project list | show [PROJECT]
+sidequest project add PATH --workspace W [--init | --as-directory | --repo NAME ...]
+sidequest project clone URL --workspace W [--into DIR]
+sidequest project rename PROJECT NAME
+sidequest project move PROJECT WORKSPACE
+sidequest project set PROJECT [options] [--unset SETTING ...]
+sidequest project remove PROJECT [--dry-run] [--force]
+
+sidequest workspace list | add NAME | rename W NAME
+sidequest workspace set W [--review-template ...] [--launch-template ...] [--sound ...] [--run-on ...] [--unset ...]
+sidequest workspace remove W [--dry-run] [--force]
+```
+
+`project show` prints each setting with where it comes from: `project`, `workspace`, `global` (Settings) or `default`. `add` takes a git repository as is; any other directory needs `--init`, `--as-directory` or `--repo NAME`. `clone` takes `owner/repo` (through `gh`) or any git URL. `rename` renames the directory on disk too.
+
+| `project set` option | Notes |
+|----------------------|-------|
+| `--setup-command` | Runs in each new worktree before the agent starts |
+| `--review-template`, `--launch-template`, `--sound`, `--run-on` | Also on `workspace set`, which its projects inherit. `--launch-template none` turns the workspace's off; `--run-on local` keeps the project on this machine |
+| `--supervisor`, `--account`, `--context` | Copied onto each new quest |
+| `--unset SETTING` | Repeatable: `setup-command`, `review-template`, `launch-template`, `sound`, `supervisor`, `account`, `context`, `run-on` |
+
+`remove` deletes every quest of the project as `quest delete` does; the directory, its journal and the quests' branches stay on disk. It refuses work that would be lost unless `--force`; `--dry-run` shows what would go.
+
+### Journal entries
+
+```
+sidequest journal list [-p PROJECT] [--source auto|manual|agent] [--limit N]
+sidequest journal read | delete ENTRY
+sidequest journal rename ENTRY NAME
+sidequest journal commit ENTRY --to DIR
+sidequest journal chronicle [QUEST]
+sidequest journal retention list [--older-than DAYS] | keep PATH | retire PATH
+sidequest journal dir show | set DIR | set --default | remove DIR
+```
+
+An entry is its file name, with or without `.md`, or its path. `chronicle` runs the Chronicler on a quest's conversation (up to three minutes) and exits `1` if it found nothing worth recording. `commit --to` takes an existing directory relative to the project's own checkout and commits only that file, without pushing. `retention list` defaults to 90 days across every project. These verbs need the app running; to search and write, use [`sidequest-journal`](#sidequest-journal). See [Journals](/get-sidequest/docs/guides/journals/).
+
+### Settings
+
+```
+sidequest settings list
+sidequest settings get KEY
+sidequest settings set KEY VALUE
+sidequest settings export > settings.json
+sidequest settings import FILE
+```
+
+App-wide settings: the Settings dialog's (except **Remote machines**) and the journal switches. `list` prints each key, its value and what it takes; `set` refuses anything else. `''` blanks a text setting. `export` and `import` use the same file as **Export Settings** and **Import Settings**. Project and workspace overrides belong to `sidequest project` and `sidequest workspace`.
+
+### Remotes
+
+```
+sidequest remote list | presets | show R
+sidequest remote create NAME --preset ssh|docker|devpod|coder [--host ...] [templates] [--env KEY=VALUE]
+sidequest remote update R [--name NAME] [templates] [--env ...] [--unset-env KEY]
+sidequest remote check R [MACHINE_OR_HOST]
+sidequest remote delete R
+sidequest remote forget-machine QUEST [--force]
+```
+
+`check` reaches the machine and lists which of tmux, git and the agent CLIs it has. `delete` is refused while a quest has a machine on the remote. When `quest complete`, `backlog` or `delete` fails because a machine won't stop, `forget-machine` names it and the commands to stop it by hand; `--force` makes Sidequest forget it, and the machine may keep running and costing money. See [Remote Machines](/get-sidequest/docs/advanced/remote-machines/).
+
+### Claude accounts
+
+```
+sidequest account list
+sidequest account add NAME
+sidequest account login | status | delete ACCOUNT
+```
+
+Signing in is interactive, so `login` prints the command to run in a terminal; `status` then asks Claude Code who the account is and records it. `delete` removes the account's config directory, credentials and conversations; its quests and projects fall back to the default account.
+
+### Usage, routing rules and the Stop hook
+
+```
+sidequest usage summary [--days N]
+sidequest usage quest [QUEST]
+sidequest router show | set FILE | reset
+sidequest hook status | install | uninstall
+```
+
+`usage` reads Claude Code transcripts for tokens by project, model, tool and skill; cost estimates stay in the [Usage Dashboard](/get-sidequest/docs/guides/usage-dashboard/). `router` prints, replaces (`-` for stdin) or resets the [router rules](/get-sidequest/docs/advanced/router-rules/). `hook` checks or installs the Claude Code Stop hook for `~/.claude` and every Claude account.
+
+### Disk cleanup
+
+```
+sidequest storage list
+sidequest storage reclaim [--orphaned] [--completed] [--sessions] [--dry-run] [TARGET ...]
+```
+
+`list` shows quest worktrees by size and orphaned `sq-` tmux sessions. `reclaim --orphaned` removes worktrees whose quest was deleted, `--completed` those of completed quests (their branches and commits stay), and `--sessions` stops orphaned tmux sessions. A live quest's worktree is never reclaimed. Run with `--dry-run` first.
+
+### Inside a supervisor's session
+
+A supervisor's session has `SIDEQUEST_SUPERVISOR_ID` set, and the app keeps every command from it to that supervisor's group:
+
+- Quest verbs reach only its own quests; `quest list` lists only them, and a quest it creates (including with `handoff --new`) joins it unless `--no-supervisor`.
+- `supervisor list` shows it and the supervisors reporting to it; `status`, `read`, `send` and `nudge` reach only those. Creating, updating, starting, stopping and deleting supervisors is refused.
+- Read-only verbs still work (`project show`, `workspace list`, `journal list|read`, `settings list|get|export`, `remote list|show|check`, `account list|status|login`, `storage list`, `router show`, `hook status`). Changing projects, settings, remotes, accounts, journals, routing rules, the Stop hook, `storage reclaim`, `remote forget-machine` and every `saga` verb are refused.
 
 ### How agents use it
 
-The `sidequest` skill (`~/.claude/skills/sidequest/SKILL.md`) tells Claude Code to:
+The `sidequest` skill (`~/.claude/skills/sidequest/SKILL.md`) covers every group above. It tells Claude Code to:
 
 - create quests in the **backlog** unless told the work should start now, since `--active` costs a session and a worktree;
-- run `sidequest quest list` first and skip anything already open for the same PR or task, so a recurring quest does not pile up duplicates;
+- run `sidequest quest list` first and skip anything already open for the same PR or task, so a scheduled Saga does not pile up duplicates;
 - create one quest per unit of work, only for work it was asked to hand off -- never fan out on its own;
-- report what it created and what it skipped.
+- make `sidequest quest complete` the last step when closing its own quest, after committing and pushing;
+- answer menus with `send --choice` by label, trust exit codes over the screen, and never resend text that exited `4`;
+- pass `--force` only when told work may be lost, and ask you before `remote forget-machine --force`;
+- use the CLI rather than SQL or `tmux send-keys`, so sessions, machines, journals and the window stay in step.
 
-A typical use is a recurring triage quest that reviews the day's pull requests and spins off a Review quest for each one it flags:
+A typical use is a scheduled triage Saga that reviews the day's pull requests and spins off a Review quest for each one it flags:
 
 ```bash
 sidequest quest list --project my-repo --type review
@@ -86,7 +316,7 @@ EOF
 
 ## `sidequest-journal`
 
-A standalone binary that reads Sidequest's database read-only and the journal files on disk, so it works whether or not the app is open.
+A standalone binary that reads Sidequest's database read-only and the journal files on disk, so it works whether or not the app is open. To list, read, rename, delete, commit or retire entries, use [`sidequest journal`](#journal-entries) instead.
 
 ```
 sidequest-journal search --terms a,b [--projects x,y | --all-projects]
@@ -135,4 +365,4 @@ The `sidequest-journal` skill tells Claude Code to search before any deep invest
 
 ## Startup context
 
-Besides the CLIs, each Claude Code quest receives a **quest context** block at the start of its session, delivered through a `SessionStart` hook so it is re-injected after `/clear` and `/compact`. It lists up to three journal entries matched to the quest title, the context projects to read, and any attached files. The block is written to `~/.sidequest/quest-context/<quest-id>.json` and shown in gray above the prompt in the terminal. Other agents receive the same text as a prefix to their prompt.
+Besides the CLIs, each Claude Code quest receives a **quest context** block at the start of its session, delivered through a `SessionStart` hook so it is re-injected after `/clear` and `/compact`. It lists up to three journal entries matched to the quest title, the context projects to read, and any attached files. The block is written to `~/.sidequest/quest-context/<quest-id>.json` (copied to the machine for a remote quest) and shown in gray above the prompt in the terminal. Other agents receive the same text as a prefix to their prompt.
