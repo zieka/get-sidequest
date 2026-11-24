@@ -9,13 +9,15 @@ A **quest** is one agent session scoped to a task. Each quest runs in its own tm
 
 ## Quest Types
 
-When creating a quest, you choose one of three types:
+When creating a quest, you choose a type:
 
 **Worktree** -- Creates an isolated [git worktree](https://git-scm.com/docs/git-worktree) branched from a base branch you select. The agent works there, fully isolated from your checkout and from other quests. Use this for bug fixes, features, or any task that modifies code. This is the default for git repositories.
 
 **Current Branch** -- Runs the agent in the project's checked-out branch with no worktree. Use this for exploring code, answering questions, or investigating issues.
 
 **Review** -- Checks out a pull request into a worktree and sends the agent your review prompt (by default `/review <number>`). Use this to get AI-assisted code review on open PRs.
+
+**Terminal** -- Creates a worktree as Worktree does, but opens your login shell there instead of an agent, for work you do by hand. Offered for git repositories.
 
 See [Quest Types](/get-sidequest/docs/guides/quest-types/) for the full comparison.
 
@@ -37,7 +39,7 @@ The dialog has more options when you need them:
 - **Add other projects for context** -- list other projects (or any directory via **Browse directory...**) the agent should read for context.
 - **Attach** -- attach images, PDFs, text, Markdown or JSON files. Pasting an image into the prompt attaches it too.
 - **/** in the prompt -- autocompletes your Claude Code skills, commands and agents. Enter inserts `/name` (or `@name` for agents).
-- **Agent** -- Claude Code, Gemini CLI, Codex CLI, Copilot CLI, OpenCode, or **Shell** for a plain terminal (the prompt becomes an optional **Name** and agent-only options hide).
+- **Agent** -- Claude Code, Gemini CLI, Codex CLI, Copilot CLI, OpenCode, or **Shell** for a plain terminal (the prompt becomes an optional **Name** and agent-only options hide). For a shell in a new worktree, pick the **Terminal** type instead; it hides **Agent**.
 - **Claude account** -- shown once you have added a [profile](/get-sidequest/docs/guides/agents-and-models/#claude-account-profiles).
 - **Supervisor** -- preset to the project's default supervisor, if one is set; hand the quest to a [supervisor](/get-sidequest/docs/guides/supervisors/) that answers its prompts and pulls it from the queue.
 - **Advanced** -- a **Token budget** that stops a Claude Code Worktree or Review quest at the next turn boundary once it has used that many tokens, and **Model** and **Effort** to override the smart router's choice. See [Agents and Models](/get-sidequest/docs/guides/agents-and-models/).
