@@ -39,7 +39,7 @@ Each Saga is a card showing:
 - an on/off switch, for a published Saga that starts on a schedule or an event;
 - **Run** (the play button) and **More**, with **Choose cover art** and **Delete**.
 
-Above the cards are **Search Sagas**, **Group by** (**Trigger** or **Color**; your choice is kept), a **Projects** filter (**All projects**, one project, or **No project yet**) and **New Saga** (**New Saga in** _project_ while filtered).
+Above the cards are **Search Sagas**, **Group by** (**Trigger** or **Color**; your choice is kept), a **Projects** filter (**All projects**, one project, or **No project yet**), [**Describe a Saga**](#describe-a-saga) and **New Saga** (**New Saga in** _project_ while filtered).
 
 Deleting a Saga removes its versions and run history. Quests its runs started stay on the board.
 
@@ -52,10 +52,23 @@ Deleting a Saga removes its versions and run history. Quests its runs started st
 - **Add step** (top left of the canvas) adds any step, or a supervisor.
 - Hover a card to see its actions and a **+** on each exit; **+** adds the next step, already wired. Drag from an exit to another card to wire it by hand.
 - Each card edits its everyday settings in place. Its actions include **Duplicate step** and **Advanced settings**, which opens the rest in the side panel.
-- With no step selected, the side panel shows **Saga settings**: **Description**, **Outputs**, **Projects** and **Supervisors** (which supervisor fills each supervisor card on this machine -- not part of the Saga itself) and **Versions**.
+- With no step selected, the side panel shows **Saga settings**: **Description**, **Outputs**, **Projects** and **Supervisors** (which supervisor fills each supervisor card on this machine -- not part of the Saga itself) and **Versions**. Each project or supervisor the Saga names is a **slot**: a placeholder the Saga declares and each install fills. A project slot must be filled before a run starts.
 - The header shows **No issues** or **N issues** (click one to select its step), then **Runs**, **Publish** and **Run**. A Saga with errors can't be run or published.
 
 A Saga has one Start and at least one End. Its graph can't contain a loop.
+
+### Describe a Saga
+
+**Describe a Saga** builds the draft from words instead of a blank graph. Say what it should do, pick a **Project**, and click **Build it**:
+
+- Sidequest creates the Saga with that project in its `project` slot, and starts an active Current Branch quest there, **Build Saga: …**, on your default agent and this machine.
+- The agent reads `sidequest saga format`, asks up to three short questions if your description leaves something open, then writes the draft with `sidequest saga edit` until it has no errors.
+- The editor opens on the new Saga with a notice. **Open quest** goes to the builder's quest, where you answer its questions. Each draft the agent saves appears in the editor as it lands.
+- The agent doesn't publish or run the Saga. A step that needs another project gets its own slot, and the agent tells you to fill it.
+
+:::caution
+The editor and the agent save the same draft: the later save wins. Let the agent finish before you edit.
+:::
 
 ### Steps
 
@@ -199,6 +212,23 @@ When a run reaches a Human input step, the Sagas button shows an orange dot and 
 See [Supervisors](/get-sidequest/docs/guides/supervisors/).
 
 ## Command line
+
+Build one:
+
+```bash
+sidequest saga format                                   # each step kind, its settings and ports, an example
+sidequest saga create 'Bug triage' --project api        # the starter graph, its project slot set to api
+sidequest saga show 'Bug triage'                        # slots, steps and problems
+sidequest saga show 'Bug triage' --definition > d.json  # the draft as JSON
+sidequest saga edit 'Bug triage' --file d.json          # replace the draft; --file - reads stdin
+sidequest saga bind 'Bug triage' project web            # fill or re-point a slot; --clear empties it
+sidequest saga publish 'Bug triage'                     # the next version; --bump minor or major
+sidequest saga delete 'Bug triage'
+```
+
+`edit` saves the draft errors and all, as the editor does, and an open editor shows it at once. It exits `1` while the draft has errors, listing each with its step or edge; warnings alone exit `0`. Keep the `id` that `show --definition` prints. If the editor and `edit` both change a draft, the later save wins.
+
+Run one:
 
 ```bash
 sidequest saga list                                # each Saga and what starts it

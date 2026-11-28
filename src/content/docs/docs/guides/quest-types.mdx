@@ -1,6 +1,6 @@
 ---
 title: Quest Types
-description: Understand the difference between Worktree, Current Branch and Review quests, plus Home quests, plan mode and token budgets.
+description: Understand the difference between Worktree, Current Branch and Review quests, plus Terminal and Home quests, plan mode and token budgets.
 ---
 
 import Mermaid from '../../../../components/Mermaid.astro';
@@ -69,6 +69,12 @@ Use Review quests when you want to:
 
 - Get an AI-assisted code review of an open pull request
 - Understand what a PR changes before merging
+
+## Terminal
+
+Pick **Terminal** (Shell in a new worktree) as the **Type** to work in a quest's worktree yourself. Sidequest creates the worktree and branch as for a Worktree quest, runs the project's setup command, and opens your login shell there instead of an agent. **Agent** and the agent-only options are hidden, and the prompt becomes an optional **Name**.
+
+Terminal is offered for git repositories. It is saved as a Worktree quest running the [Shell](/get-sidequest/docs/guides/agents-and-models/#shell) agent, so Edit Quest shows it as Worktree, Shell's limits apply, and the CLI equivalent is `sidequest quest create --type changes --agent shell`. For a shell in the project checkout or a pull request, pick Current Branch or Review and choose **Shell** as the agent.
 
 ## Home quests
 

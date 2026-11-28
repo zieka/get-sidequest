@@ -5,7 +5,7 @@ description: Learn how to use Sidequest to run and supervise parallel coding-age
 
 Welcome to the Sidequest documentation. Sidequest runs coding agents -- Claude Code, Gemini CLI, Codex CLI, Copilot CLI and OpenCode -- as **quests** on a per-project board, isolates each one in its own git worktree, and lets a **supervisor** agent keep the board moving while you are away.
 
-This documentation describes Sidequest **0.83**.
+This documentation describes Sidequest **0.84**.
 
 ## Quick Links
 
@@ -22,7 +22,12 @@ This documentation describes Sidequest **0.83**.
 
 ## What changed recently
 
-New since 0.75:
+New in 0.84:
+
+- **Terminal quests.** Pick **Terminal** as a quest's **Type** for your login shell in a new worktree, with no agent.
+- **Build Sagas from the CLI**, or **Describe a Saga** in your own words and let an agent build the draft.
+
+From 0.76 to 0.83:
 
 - **Sagas replace recurring quests.** Draw a workflow of quest, condition, wait, human-input, command and other steps, start it on a schedule, a new pull request or issue, or by hand, and watch each run on its graph. Existing recurring quests are converted on first launch.
 - **Remote machines.** A quest can run its agent and checkout on an ssh host, Docker container, devpod.sh or Coder workspace, chosen per workspace, project or quest.

@@ -172,6 +172,13 @@ A supervisor is created stopped. A running one reads its agent, model, rules, ce
 
 ```
 sidequest saga list
+sidequest saga create NAME [--project PROJECT]
+sidequest saga show SAGA [--definition]
+sidequest saga edit SAGA --file FILE
+sidequest saga bind SAGA SLOT (VALUE | --clear)
+sidequest saga publish SAGA [--bump patch|minor|major]
+sidequest saga delete SAGA
+sidequest saga format
 sidequest saga run SAGA [--draft | --version V] [--input JSON | --input-file FILE]
 sidequest saga status RUN
 sidequest saga cancel RUN
@@ -179,7 +186,9 @@ sidequest saga trigger SAGA [--enabled on|off]
 sidequest saga report [--run RUN --step STEP] (--result JSON | --result-file FILE | --failed REASON)
 ```
 
-Sagas are built in the window; the CLI runs and inspects them. `run` starts the latest published version and answers at once with the run's id; the input is checked against the Saga's inputs first. `status` shows each step, its quest and the result. `cancel` leaves the run's quests as they are. `trigger` shows what starts a Saga unattended (a schedule, or an opened pull request or issue); `--enabled off` stops it, and `on` starts it again from now, passing over what came due while it was off.
+Build a Saga here or in the window. `create` opens it on the same starter as **New Saga** (a manual Start, one Quest step and an End) with one project slot, `project`, which `--project` fills. `show` lists its slots, steps and problems; `--definition` prints the draft as JSON. `edit` replaces the whole draft from a file (`-` reads stdin): start from `show --definition`, keep its `id`, and see `format` for each step kind's settings and ports. The draft is saved even with errors, and an open editor shows it at once; `edit` then exits `1`, listing each error with its step or edge. Warnings alone exit `0`, and a file that isn't a Saga definition saves nothing. `bind` fills a slot with a project (id, path or name) or a supervisor (id or name), whichever the slot holds. `publish` makes the next version (1.0.0 first; `--bump` defaults to `patch`) and refuses while the draft has errors or nothing changed. `delete` removes the Saga with its versions and run history.
+
+`run` starts the latest published version and answers at once with the run's id; the input is checked against the Saga's inputs first. `status` shows each step, its quest and the result. `cancel` leaves the run's quests as they are. `trigger` shows what starts a Saga unattended (a schedule, or an opened pull request or issue); `--enabled off` stops it, and `on` starts it again from now, passing over what came due while it was off.
 
 `report` is for the agent of a quest that is a Saga step: its prompt ends with the exact command. A result that doesn't match the step's schema exits `1` with each violation, and the step keeps waiting for a corrected report.
 
